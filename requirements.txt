@@ -1,0 +1,5 @@
+odoo-test-helper==2.1.0
+debugpy
+pylint-odoo==7.0.0
+pylint-gitlab
+pylint-exit
