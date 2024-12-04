@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 res=0
 module_count=0

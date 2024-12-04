@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 change_list=$(git diff --name-only HEAD HEAD~1 | xargs dirname | grep -v '\.' | cut -d '/' -f 1 | sort | uniq | paste -sd ",")
 
