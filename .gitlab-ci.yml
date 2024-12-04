@@ -1,0 +1,47 @@
+pylint:
+  tags:
+    - gitlab_runner_tags
+  stage: build
+  only:
+    - development
+  before_script:
+    - cd $CI_PROJECT_DIR
+    - /opt/odoo/env/bin/pip3 install -r requirements.txt
+    - touch codeclimate.json
+    - echo "[]" > codeclimate.json
+    - export PATH="/opt/odoo/env/bin:$PATH"
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./lint.sh
+    - cd $CI_PROJECT_DIR
+    - /opt/odoo/env/bin/python3 ./code_quality_merge.py
+  artifacts:
+    reports:
+      codequality: codeclimate.json
+
+unit_tests:
+  tags:
+    - gitlab_runner_tags
+  stage: test
+  needs: ['pylint']
+  only:
+    - development
+  variables:
+    COMPOSE_PROJECT_NAME: "${CI_PROJECT_NAME}-${CI_MERGE_REQUEST_IID}"
+  before_script:
+    - cd $CI_PROJECT_DIR
+  script:
+    - ./unit-test.sh
+  after_script:
+    - dropdb --if-exists -f -h localhost -U test_user tests_12345678zxcvb
+
+deploy_to_development:
+  tags:
+    - gitlab_runner_tags
+  stage: deploy
+  before_script:
+    - cd $CI_PROJECT_DIR
+  script:
+    - ./deploy.sh
+  only:
+    - development
