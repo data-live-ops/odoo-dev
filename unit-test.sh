@@ -25,4 +25,4 @@ fi
 
 addons="${addons},$(pwd)"
 
-${ODOO_VENV}/bin/python3 ${ODOO_PATH}/odoo-bin --db_host localhost -r test_user -w zxc741 --http-port 8999 --addons-path "$addons" -d "tests_12345678" --stop-after-init --init "$TEST_MODULES" -u "$TEST_MODULES" --test-enable --test-tags "$TEST_TAGS"
+${ODOO_VENV}/bin/python3 ${ODOO_PATH}/odoo-bin --db_host localhost -r test_user -w zxc741 --http-port 8999 --addons-path "$addons" -d "tests_12345678zxcvb" --stop-after-init --init "$TEST_MODULES" -u "$TEST_MODULES" --test-enable --test-tags "$TEST_TAGS"
