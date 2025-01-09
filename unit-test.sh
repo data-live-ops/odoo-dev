@@ -16,15 +16,13 @@ if [ -z "$1" ]
     TEST_TAGS=$1
 fi
 source $(pwd)/odoo.env
-# addons="${ODOO_PATH}/addons"
+addons="${ODOO_PATH}/addons"
 
-# if [[ ! -z $ENTERPRISE_ADDONS_PATH ]]
-# then
-#   addons="${addons},$ENTERPRISE_ADDONS_PATH"
-# fi
+if [[ -d "/opt/odoo/enterprise/addons" ]]
+then
+  addons="${addons},/opt/odoo/enterprise/addons"
+fi
 
-odoo_addons=$(grep 'addons_path' /opt/odoo/config/odoo-server.conf | cut -d '=' -f2 | xargs)
-
-addons="${odoo_addons},$(pwd)"
+addons="${addons},$(pwd)"
 
 ${ODOO_VENV}/bin/python3 ${ODOO_PATH}/odoo-bin --db_host localhost -r test_user -w zxc741 --http-port 8999 --addons-path "$addons" -d "tests_12345678zxcvb" --stop-after-init --init "$TEST_MODULES" -u "$TEST_MODULES" --test-enable --test-tags "$TEST_TAGS"
