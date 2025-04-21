@@ -1,6 +1,6 @@
 pylint:
   tags:
-    - gitlab_runner_tags
+    - colearn-dev
   stage: build
   only:
     - development
@@ -21,7 +21,7 @@ pylint:
 
 unit_tests:
   tags:
-    - gitlab_runner_tags
+    - colearn-dev
   stage: test
   needs: ['pylint']
   only:
@@ -37,7 +37,7 @@ unit_tests:
 
 deploy_to_development:
   tags:
-    - gitlab_runner_tags
+    - colearn-dev
   stage: deploy
   before_script:
     - cd $CI_PROJECT_DIR
