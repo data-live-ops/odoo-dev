@@ -14,7 +14,7 @@ class HelpdeskSLA(models.Model):
         help='Email template used for SLA reminders.',
         tracking=True,
     )
-    sla_deadline = fields.Float(
+    sla_deadline = fields.Integer(
         string='SLA Deadline',
         help='SLA deadline.',
         tracking=True,
@@ -40,7 +40,7 @@ class HelpdeskSLA(models.Model):
             except Exception as e:
                 _logger.warning(f"Invalid create_date for ticket {ticket.id}: {e}")
                 continue
-            deadline = create_dt + datetime.timedelta(days=3) - datetime.timedelta(days=sla_deadline)
+            deadline = create_dt + datetime.timedelta(days=sla_deadline)
             if fields.Datetime.from_string(now) >= deadline:
                 # Send reminder email using SLA's template
                 template = getattr(sla, 'sla_reminder_email_template_id', False)
