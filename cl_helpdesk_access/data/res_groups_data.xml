@@ -1,0 +1,5 @@
+<odoo>
+    <record id="res_groups_agent" model="res.groups">
+        <field name="name">Agent</field>
+    </record>
+</odoo>
