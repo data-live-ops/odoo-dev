@@ -1,0 +1,8 @@
+<odoo>
+    <record id="ir_rule_agent" model="ir.rule">
+        <field name="name">Ticket Restriction</field>
+        <field name="model_id" ref="helpdesk.model_helpdesk_ticket"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('cl_helpdesk_access.res_groups_agent'))]"/>
+    </record>
+</odoo>
