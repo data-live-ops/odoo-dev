@@ -1,5 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_helpdesk_ticket_agent,access.helpdesk.ticket.agent,helpdesk.model_helpdesk_ticket,cl_helpdesk_access.res_groups_agent,1,1,1,1
-access_helpdesk_tag_agent,access.helpdesk.tag.agent,helpdesk.model_helpdesk_tag,cl_helpdesk_access.res_groups_agent,1,0,0,0
-access_helpdesk_sla_report_analysis_agent,access.helpdesk.sla.report.analysis.agent,helpdesk.model_helpdesk_sla_report_analysis,cl_helpdesk_access.res_groups_agent,1,0,0,0
-access_helpdesk_ticket_report_analysis_agent,access.helpdesk.ticket.report.analysis.agent,helpdesk.model_helpdesk_ticket_report_analysis,cl_helpdesk_access.res_groups_agent,1,0,0,0
