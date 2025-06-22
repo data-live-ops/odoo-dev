@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="ir_cron_sla_timer_reminder" model="ir.cron">
-        <field name="name">SLA Reminders</field>
+    <record id="ir_cron_sla_reminder" model="ir.cron">
+        <field name="name">SLA Reminder</field>
         <field name="model_id" ref="helpdesk.model_helpdesk_sla"/>
         <field name="state">code</field>
         <field name="code">model.cron_sla_reminder()</field>

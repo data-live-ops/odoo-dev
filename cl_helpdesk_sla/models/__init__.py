@@ -1,1 +1,1 @@
-from . import sla_policies
+from . import helpdesk_sla

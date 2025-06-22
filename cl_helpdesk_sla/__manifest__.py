@@ -1,22 +1,21 @@
 {
-    'name': 'Colearn - Helpdesk SLA Timer',
+    'name': 'CoLearn Helpdesk - SLA Timer',
     'version': '18.0.1.0.0',
-    'category': 'Settings',
-    'summary': 'SLA Timer',
+    'summary': 'Module for helpdesk SLA timer',
     'description': """
-        -SLA Timer
+        Add helpdesk customizations for SLA timer
     """,
-    'website': 'https://www.portcities.net',
-    'author': 'Portcities Ltd.',
-    'depends': [
-        'helpdesk'
-    ],
+    'category': 'Helpdesk',
+    'author': "Port Cities Ltd",
+    'website': "http://www.portcities.net",
+    'depends': ['helpdesk'],
     'data': [
-        'views/sla_policies_views.xml',
-        'data/ir_cron_sla_reminder.xml',
+        'data/ir_cron_data.xml',
+        'views/helpdesk_sla_views.xml',
     ],
     'installable': True,
-    'auto_install': False,
     'application': False,
+    'auto_install': False,
     'license': 'AGPL-3',
+    'support': 'modules@portcities.net',
 }
