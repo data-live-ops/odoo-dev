@@ -12,6 +12,7 @@
     'data': [
         'data/ir_cron_data.xml',
         'views/helpdesk_sla_views.xml',
+        'views/helpdesk_ticket_views.xml',
     ],
     'installable': True,
     'application': False,
