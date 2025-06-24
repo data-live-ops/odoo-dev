@@ -1,0 +1,19 @@
+<odoo>
+    <record id="helpdesk_sla_view_form" model="ir.ui.view">
+        <field name="name">helpdesk.sla.view.form.cl_helpdesk_sla</field>
+        <field name="model">helpdesk.sla</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_sla_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='exclude_stage_ids']" position="after">
+                <field name="sla_reminder_email_template_id" required="1"/>
+                <field name="sla_deadline" widget="float_time" required="1"/>
+            </xpath>
+            <xpath expr="//group/group/label[@for='tag_ids']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='tag_ids']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
