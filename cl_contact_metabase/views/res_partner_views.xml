@@ -81,9 +81,9 @@
     <record id="view_partner_list_metabase" model="ir.ui.view">
         <field name="name">res.partner.list.metabase</field>
         <field name="model">res.partner</field>
-        <field name="inherit_id" ref="base.view_partner_list"/>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
         <field name="arch" type="xml">
-            <field name="display_name" position="after">
+            <field name="vat" position="after">
                 <field name="is_student" invisible="1"/>
                 <field name="is_parent" invisible="1"/>
                 <field name="grade" optional="hide" invisible="not is_student"/>
