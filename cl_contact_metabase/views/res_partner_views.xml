@@ -77,11 +77,11 @@
         </field>
     </record>
     
-    <!-- Add Metabase fields to partner tree view -->
-    <record id="view_partner_tree_metabase" model="ir.ui.view">
-        <field name="name">res.partner.tree.metabase</field>
+    <!-- Add Metabase fields to partner list view -->
+    <record id="view_partner_list_metabase" model="ir.ui.view">
+        <field name="name">res.partner.list.metabase</field>
         <field name="model">res.partner</field>
-        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="inherit_id" ref="base.view_partner_list"/>
         <field name="arch" type="xml">
             <field name="display_name" position="after">
                 <field name="is_student" invisible="1"/>
