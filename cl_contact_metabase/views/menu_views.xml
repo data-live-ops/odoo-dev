@@ -18,22 +18,10 @@
         <field name="name">Sync All Contacts from Metabase</field>
         <field name="model_id" ref="model_res_partner"/>
         <field name="binding_model_id" ref="model_res_partner"/>
+        <field name="binding_view_types">form,list</field>
         <field name="state">code</field>
         <field name="code">
             action = model.sync_all_contacts_from_metabase()
-            action = {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': 'Metabase Sync',
-                    'message': 'Contact synchronization with Metabase has been initiated.',
-                    'sticky': False,
-                    'type': 'success',
-                    'next': {
-                        'type': 'ir.actions.act_window_close'
-                    }
-                }
-            }
         </field>
     </record>
     
