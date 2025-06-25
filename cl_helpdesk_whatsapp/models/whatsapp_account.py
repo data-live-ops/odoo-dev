@@ -90,8 +90,6 @@ class WhatsAppAccount(models.Model):
         ticket_vals = {
             'name': 'WhatsApp Ticket',
             'description': 'Ticket created from WhatsApp message.',
-            'initiated_by': 'student',
-            'student_phase': 'new_student',
             'channel': 'whatsapp',
         }
         if partner:

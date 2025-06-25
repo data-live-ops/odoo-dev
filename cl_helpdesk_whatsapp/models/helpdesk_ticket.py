@@ -8,7 +8,6 @@ class HelpdeskTicket(models.Model):
 
     user_id = fields.Many2one(
         required=True,
-        tracking=True,
     )
     partner_id = fields.Many2one(
         tracking=True,
@@ -24,14 +23,12 @@ class HelpdeskTicket(models.Model):
             ('new_student', 'New Student'),
             ('non_paid_student', 'Non Paid Student'),
         ],
-        required=True,
     )
     initiated_by = fields.Selection(
         selection=[
             ('student', 'Student'),
             ('parent', 'Parent'),
         ],
-        required=True,
     )
     channel = fields.Selection(
         selection=[
@@ -40,7 +37,6 @@ class HelpdeskTicket(models.Model):
             ('req_callback', 'Req Callback'),
             ('internal', 'Internal'),
         ],
-        required=True,
     )
 
     @api.model
