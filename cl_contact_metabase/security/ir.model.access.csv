@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_metabase_config_admin,metabase.config admin,model_metabase_config,base.group_system,1,1,1,1
+access_metabase_config_user,metabase.config user,model_metabase_config,base.group_user,1,0,0,0
+access_import_metabase_contacts,import.metabase.contacts user,model_import_metabase_contacts,base.group_user,1,1,1,1
