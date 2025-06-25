@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the partner form view -->
+    <record id="view_partner_form_metabase_inherit" model="ir.ui.view">
+        <field name="name">res.partner.form.metabase.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_sync_from_metabase" 
+                        type="object" 
+                        class="oe_stat_button" 
+                        icon="fa-refresh"
+                        attrs="{'invisible': [('metabase_id', '=', False)]}">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Sync from</span>
+                        <span class="o_stat_text">Metabase</span>
+                    </div>
+                </button>
+            </xpath>
+            
+            <notebook position="inside">
+                <page string="Metabase Data" name="metabase_data" attrs="{'invisible': [('metabase_id', '=', False)]}">
+                    <group>
+                        <group string="Metabase Information">
+                            <field name="metabase_id"/>
+                            <field name="metabase_parent_id" attrs="{'invisible': [('is_student', '=', False)]}"/>
+                            <field name="metabase_last_sync"/>
+                            <field name="is_student"/>
+                            <field name="is_parent"/>
+                        </group>
+                        <group string="Student Information" attrs="{'invisible': [('is_student', '=', False)]}">
+                            <field name="grade"/>
+                            <field name="curriculum"/>
+                            <field name="lead_stage"/>
+                        </group>
+                    </group>
+                    <group string="Subscription Information" attrs="{'invisible': [('is_student', '=', False)]}">
+                        <field name="subscription_status"/>
+                        <field name="subscription_start_date"/>
+                        <field name="subscription_end_date"/>
+                        <field name="subscription_package"/>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+    
+    <!-- Add Metabase fields to partner search view -->
+    <record id="view_res_partner_filter_metabase" model="ir.ui.view">
+        <field name="name">res.partner.select.metabase</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="metabase_id"/>
+                <field name="grade"/>
+                <field name="curriculum"/>
+                <field name="lead_stage"/>
+                <field name="subscription_status"/>
+                <field name="subscription_package"/>
+            </xpath>
+            <xpath expr="//filter[@name='type_person']" position="after">
+                <filter string="Students" name="students" domain="[('is_student', '=', True)]"/>
+                <filter string="Parents" name="parents" domain="[('is_parent', '=', True)]"/>
+                <separator/>
+                <filter string="Active Subscription" name="active_subscription" domain="[('subscription_status', '=', 'active')]"/>
+                <filter string="Paused Subscription" name="paused_subscription" domain="[('subscription_status', '=', 'paused')]"/>
+                <filter string="Inactive Subscription" name="inactive_subscription" domain="[('subscription_status', '=', 'inactive')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Grade" name="grade" context="{'group_by': 'grade'}"/>
+                <filter string="Curriculum" name="curriculum" context="{'group_by': 'curriculum'}"/>
+                <filter string="Lead Stage" name="lead_stage" context="{'group_by': 'lead_stage'}"/>
+                <filter string="Subscription Status" name="subscription_status" context="{'group_by': 'subscription_status'}"/>
+            </xpath>
+        </field>
+    </record>
+    
+    <!-- Add Metabase fields to partner tree view -->
+    <record id="view_partner_tree_metabase" model="ir.ui.view">
+        <field name="name">res.partner.tree.metabase</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <field name="display_name" position="after">
+                <field name="is_student" invisible="1"/>
+                <field name="is_parent" invisible="1"/>
+                <field name="grade" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
+                <field name="curriculum" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
+                <field name="lead_stage" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
+                <field name="subscription_status" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
+            </field>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_metabase_config_form" model="ir.ui.view">
+        <field name="name">metabase.config.form</field>
+        <field name="model">metabase.config</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="get_session_token" string="Get Session Token" type="object"/>
+                    <button name="test_connection" string="Test Connection" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Configuration Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Connection Settings">
+                            <field name="base_url" placeholder="e.g., https://metabase.example.com"/>
+                            <field name="username"/>
+                            <field name="password" password="True"/>
+                            <field name="session_token" readonly="1"/>
+                            <field name="session_expiry" readonly="1"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Notification Settings">
+                            <field name="email_notify" widget="email"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Question IDs" name="question_ids">
+                            <group>
+                                <group string="Student Data">
+                                    <field name="student_details_question_id"/>
+                                    <field name="parent_details_question_id"/>
+                                    <field name="student_lead_stage_question_id"/>
+                                </group>
+                                <group string="Attendance Data">
+                                    <field name="paid_class_joined_question_id"/>
+                                    <field name="paid_class_details_question_id"/>
+                                </group>
+                                <group string="Subscription Data">
+                                    <field name="subscription_data_question_id"/>
+                                </group>
+                                <group string="Payment Data">
+                                    <field name="slot_selection_succeeded_question_id"/>
+                                    <field name="payment_received_question_id"/>
+                                    <field name="paid_access_paused_question_id"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_metabase_config_tree" model="ir.ui.view">
+        <field name="name">metabase.config.tree</field>
+        <field name="model">metabase.config</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="base_url"/>
+                <field name="username"/>
+                <field name="session_expiry"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_metabase_config" model="ir.actions.act_window">
+        <field name="name">Metabase Configuration</field>
+        <field name="res_model">metabase.config</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Metabase configuration
+            </p>
+            <p>
+                Configure your Metabase connection to import contact data.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_import_metabase_contacts_form" model="ir.ui.view">
+        <field name="name">import.metabase.contacts.form</field>
+        <field name="model">import.metabase.contacts</field>
+        <field name="arch" type="xml">
+            <form string="Import Contacts from Metabase">
+                <sheet>
+                    <group>
+                        <field name="metabase_config_id" options="{'no_create': True}"/>
+                        <field name="import_students"/>
+                        <field name="import_parents"/>
+                        <field name="update_existing"/>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        <p>This wizard will import contacts from Metabase based on the selected configuration.</p>
+                        <p>You can choose to import students, parents, or both, and whether to update existing contacts.</p>
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_import" string="Import" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_import_metabase_contacts" model="ir.actions.act_window">
+        <field name="name">Import Contacts from Metabase</field>
+        <field name="res_model">import.metabase.contacts</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_import_metabase_contacts"
+              name="Import Contacts"
+              parent="menu_metabase_root"
+              action="action_import_metabase_contacts"
+              sequence="15"/>
+</odoo>
