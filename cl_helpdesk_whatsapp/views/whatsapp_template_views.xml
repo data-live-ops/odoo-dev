@@ -1,0 +1,18 @@
+<odoo>
+    <record id="whatsapp_template_view_form" model="ir.ui.view">
+        <field name="name">whatsapp.template.view.form.cl_helpdesk_whatsapp</field>
+        <field name="model">whatsapp.template</field>
+        <field name="inherit_id" ref="whatsapp.whatsapp_template_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='footer_text']" position="after">
+                <field name="is_autoreply"/>
+                <field name="timed_delay" widget="float_time" invisible="not is_autoreply"/>
+                <field 
+                    name="button_create_ticket_id" 
+                    domain="[('id', 'in', button_ids), ('button_type', '=', 'quick_reply')]" 
+                    invisible="not is_autoreply"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
