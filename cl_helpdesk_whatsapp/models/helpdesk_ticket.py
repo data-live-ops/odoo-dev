@@ -6,8 +6,11 @@ class HelpdeskTicket(models.Model):
 
     _inherit = "helpdesk.ticket"
 
+    team_id = fields.Many2one(
+        tracking=False,
+    )
     user_id = fields.Many2one(
-        required=True,
+        tracking=True,
     )
     partner_id = fields.Many2one(
         tracking=True,
