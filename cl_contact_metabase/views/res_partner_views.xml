@@ -11,7 +11,7 @@
                         type="object" 
                         class="oe_stat_button" 
                         icon="fa-refresh"
-                        attrs="{'invisible': [('metabase_id', '=', False)]}">
+                        invisible="not metabase_id">
                     <div class="o_field_widget o_stat_info">
                         <span class="o_stat_text">Sync from</span>
                         <span class="o_stat_text">Metabase</span>
@@ -20,22 +20,22 @@
             </xpath>
             
             <notebook position="inside">
-                <page string="Metabase Data" name="metabase_data" attrs="{'invisible': [('metabase_id', '=', False)]}">
+                <page string="Metabase Data" name="metabase_data" invisible="not metabase_id">
                     <group>
                         <group string="Metabase Information">
                             <field name="metabase_id"/>
-                            <field name="metabase_parent_id" attrs="{'invisible': [('is_student', '=', False)]}"/>
+                            <field name="metabase_parent_id" invisible="not is_parent"/>
                             <field name="metabase_last_sync"/>
                             <field name="is_student"/>
                             <field name="is_parent"/>
                         </group>
-                        <group string="Student Information" attrs="{'invisible': [('is_student', '=', False)]}">
+                        <group string="Student Information" invisible="not is_student">
                             <field name="grade"/>
                             <field name="curriculum"/>
                             <field name="lead_stage"/>
                         </group>
                     </group>
-                    <group string="Subscription Information" attrs="{'invisible': [('is_student', '=', False)]}">
+                    <group string="Subscription Information" invisible="not is_student">
                         <field name="subscription_status"/>
                         <field name="subscription_start_date"/>
                         <field name="subscription_end_date"/>
@@ -86,10 +86,10 @@
             <field name="display_name" position="after">
                 <field name="is_student" invisible="1"/>
                 <field name="is_parent" invisible="1"/>
-                <field name="grade" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
-                <field name="curriculum" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
-                <field name="lead_stage" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
-                <field name="subscription_status" optional="hide" attrs="{'invisible': [('is_student', '=', False)]}"/>
+                <field name="grade" optional="hide" invisible="not is_student"/>
+                <field name="curriculum" optional="hide" invisible="not is_student"/>
+                <field name="lead_stage" optional="hide" invisible="not is_student"/>
+                <field name="subscription_status" optional="hide" invisible="not is_student"/>
             </field>
         </field>
     </record>
