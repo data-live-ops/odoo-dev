@@ -18,8 +18,6 @@ if [[ $? -eq 0 ]]
 then
     echo "Restarting . . ."
     sudo /usr/bin/systemctl restart $ODOO_SERVICE
-    sleep 5
-    sudo /usr/bin/systemctl status $ODOO_SERVICE
     
     ## Upgrade Module
     # ${ODOO_VENV}/bin/python3 ${ODOO_PATH}/odoo-bin -c /opt/odoo/config/odoo-server.conf -d "database_name" --stop-after-init -u "$change_list"
