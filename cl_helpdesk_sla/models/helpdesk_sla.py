@@ -8,6 +8,15 @@ class HelpdeskSLA(models.Model):
 
     _inherit = 'helpdesk.sla'
 
+    team_id = fields.Many2one(
+        required=False,
+    )
+    company_id = fields.Many2one(
+        'res.company',
+        'Company',
+        readonly=True,
+        store=True,
+    )
     sla_reminder_email_template_id = fields.Many2one(
         'mail.template',
         string='SLA Reminder Email Templates',
