@@ -19,4 +19,6 @@
     'auto_install': False,
     'license': 'AGPL-3',
     'support': 'modules@portcities.net',
+    'post_init_hook': 'update_helpdesk_sla_company_rule_domain',
+    'uninstall_hook': 'restore_helpdesk_sla_company_rule',
 }
