@@ -16,7 +16,6 @@ git pull
 
 if [[ $? -eq 0 ]]
 then
-    echo "Restarting . . ."
     sudo /usr/bin/systemctl restart $ODOO_SERVICE
     
     ## Upgrade Module
