@@ -126,6 +126,29 @@ class MetabaseAPI:
         """
         return self.get_rows_only(1032)
     
+    def get_student_by_user_id(self, user_id: int) -> Optional[dict]:
+        """
+        Get specific student details by user_id from Metabase
+        Question URL: https://metabase.dev.colearn.id/question/1032-odoo-student-details-live-class-db
+        
+        Args:
+            user_id (int): The user ID to search for
+            
+        Returns:
+            Optional[dict]: Student details as dictionary or None if not found or error occurs
+        """
+        students = self.get_rows_only(1032)
+        if not students:
+            return None
+            
+        for student in students:
+            # Assuming 'user_id' is a field in the returned data
+            # Adjust the field name if it's different in the actual response
+            if student.get('user_id') == user_id:
+                return student
+                
+        return None
+    
     def get_parent_details(self) -> Optional[list]:
         """
         Get parent details from Metabase
