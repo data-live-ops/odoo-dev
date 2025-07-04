@@ -26,7 +26,7 @@ class HelpdeskTicket(models.Model):
         res = super().write(vals)
         # Loop through each ticket in self to handle multi-record sets
         for ticket in self:
-            if ticket.user_id and ticket.user_id.exists() and \
+            if ticket.user_id and\
                     ticket.user_id not in ticket.ticket_follower_ids\
                     .mapped('user_id').ids:
                 ticket.with_context(skip_follower_update=True)\
@@ -39,7 +39,7 @@ class HelpdeskTicket(models.Model):
         tickets = super().create(vals_list)
         tickets.reset_message_followers()
         user_ids = self.get_helpdesk_admin_users()
-        if user_ids.exists():
+        if user_ids:
             tickets.ticket_follower_ids = [
                 (4, admin) for admin in user_ids
             ]
