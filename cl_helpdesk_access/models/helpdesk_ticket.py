@@ -12,7 +12,7 @@ class HelpdeskTicket(models.Model):
     def get_helpdesk_admin_users(self):
         """Return user IDs of Helpdesk Administrators."""
         admin_group = self.env.ref('helpdesk.group_helpdesk_manager')
-        return admin_group.users.ids if admin_group else []
+        return admin_group.users.mapped('partner_id.id') if admin_group else []
 
     def reset_message_followers(self):
         """Reset message followers."""
@@ -38,9 +38,7 @@ class HelpdeskTicket(models.Model):
         """Override create method to update message followers."""
         tickets = super().create(vals_list)
         tickets.reset_message_followers()
-        user_ids = self.get_helpdesk_admin_users()
-        if user_ids:
-            tickets.ticket_follower_ids = [
-                (4, admin) for admin in user_ids
-            ]
+        tickets.ticket_follower_ids = [
+            (4, admin) for admin in self.get_helpdesk_admin_users()
+        ]
         return tickets
