@@ -8,6 +8,8 @@
                 <header>
                     <button name="get_session_token" string="Get Session Token" type="object"/>
                     <button name="test_connection" string="Test Connection" type="object" class="oe_highlight"/>
+                    <button name="action_notify_portcities" string="Notify Admin" type="object" invisible="1"/>
+                    <button name="action_show_student_details" string="Show Student Details" type="object"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
@@ -29,25 +31,31 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Question IDs" name="question_ids">
+                        <page string="Question URLs" name="question_ids">
                             <group>
                                 <group string="Student Data">
-                                    <field name="student_details_question_id"/>
-                                    <field name="parent_details_question_id"/>
-                                    <field name="student_lead_stage_question_id"/>
+                                    <field name="student_details_question_url"/>
+                                    <field name="parent_details_question_url"/>
+                                    <field name="student_lead_stage_question_url"/>
                                 </group>
                                 <group string="Attendance Data">
-                                    <field name="paid_class_joined_question_id"/>
-                                    <field name="paid_class_details_question_id"/>
+                                    <field name="paid_class_joined_question_url"/>
+                                    <field name="paid_class_details_question_url"/>
                                 </group>
                                 <group string="Subscription Data">
-                                    <field name="subscription_data_question_id"/>
+                                    <field name="subscription_data_question_url"/>
                                 </group>
                                 <group string="Payment Data">
-                                    <field name="slot_selection_succeeded_question_id"/>
-                                    <field name="payment_received_question_id"/>
-                                    <field name="paid_access_paused_question_id"/>
+                                    <field name="slot_selection_succeeded_question_url"/>
+                                    <field name="payment_received_question_url"/>
+                                    <field name="paid_access_paused_question_url"/>
                                 </group>
+                            </group>
+                        </page>
+                        <page string="Retry Configuration">
+                            <group>
+                                <field name="max_retries"/>
+                                <field name="retry_delay"/>
                             </group>
                         </page>
                     </notebook>
@@ -65,13 +73,13 @@
                 <field name="base_url"/>
                 <field name="username"/>
                 <field name="session_expiry"/>
-                <field name="active"/>
+                <field name="active" widget="boolean_toggle"/>
             </list>
         </field>
     </record>
 
     <record id="action_metabase_config" model="ir.actions.act_window">
-        <field name="name">Metabase Configuration</field>
+        <field name="name">Metabase API Config</field>
         <field name="res_model">metabase.config</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
@@ -81,6 +89,24 @@
             <p>
                 Configure your Metabase connection to import contact data.
             </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_metabase_config"
+              name="Metabase Settings"
+              parent="base.menu_administration"
+              action="action_metabase_config"
+              sequence="100"/>
+    
+    <!-- Sync actions menu -->
+    <record id="action_sync_contacts_from_metabase" model="ir.actions.server">
+        <field name="name">Sync All Contacts from Metabase</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="binding_view_types">form,list</field>
+        <field name="state">code</field>
+        <field name="code">
+            action = model.sync_all_contacts_from_metabase()
         </field>
     </record>
 </odoo>

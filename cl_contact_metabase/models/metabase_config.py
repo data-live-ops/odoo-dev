@@ -22,16 +22,28 @@ class MetabaseConfig(models.Model):
     email_notify = fields.Char(string='Notification Email', help='Email to notify when there are issues with the Metabase connection')
     
     # Question IDs for different data types
-    student_details_question_id = fields.Integer(string='Student Details Question ID', default=1032)
-    parent_details_question_id = fields.Integer(string='Parent Details Question ID', default=1033)
-    student_lead_stage_question_id = fields.Integer(string='Student Lead Stage Question ID', default=1103)
-    paid_class_joined_question_id = fields.Integer(string='Paid Class Joined Question ID', default=1028)
-    paid_class_details_question_id = fields.Integer(string='Paid Class Details Question ID', default=1027)
-    subscription_data_question_id = fields.Integer(string='Subscription Data Question ID', default=1026)
-    slot_selection_succeeded_question_id = fields.Integer(string='Slot Selection Succeeded Question ID', default=1031)
-    payment_received_question_id = fields.Integer(string='Payment Received Question ID', default=1030)
-    paid_access_paused_question_id = fields.Integer(string='Paid Access Paused Question ID', default=1034)
+    student_details_question_url = fields.Char(string='Student Details Question URL', default='https://metabase.dev.colearn.id/question/1032-odoo-student-details-live-class-db')
+    parent_details_question_url = fields.Char(string='Parent Details Question URL', default='https://metabase.dev.colearn.id/question/1033-odoo-student-details-parent')
+    student_lead_stage_question_url = fields.Char(string='Student Lead Stage Question URL', default='https://metabase.dev.colearn.id/question/1103-odoo-student-details-lead-stage')
+    paid_class_joined_question_url = fields.Char(string='Paid Class Joined Question URL', default='https://metabase.dev.colearn.id/question/1028-odoo-student-details-paid-class-joined')
+    paid_class_details_question_url = fields.Char(string='Paid Class Details Question URL', default='https://metabase.dev.colearn.id/question/1027-odoo-student-details-paid-class-details')
+    subscription_data_question_url = fields.Char(string='Subscription Data Question URL', default='https://metabase.dev.colearn.id/question/1026-odoo-student-details-subscription-data')
+    slot_selection_succeeded_question_url = fields.Char(string='Slot Selection Succeeded Question URL', default='https://metabase.dev.colearn.id/question/1031-odoo-student-details-slot-selection-succeeded')
+    payment_received_question_url = fields.Char(string='Payment Received Question URL', default='https://metabase.dev.colearn.id/question/1030-odoo-student-details-payment-received')
+    paid_access_paused_question_url = fields.Char(string='Paid Access Paused Question URL', default='https://metabase.dev.colearn.id/question/1034-odoo-student-details-paid-access-paused')
     
+    # Retry Configuration
+    max_retries = fields.Integer(
+        string='Max Retries',
+        default=3,
+        help='Maximum number of retry attempts for sync process'
+    )
+    retry_delay = fields.Integer(
+        string='Retry Delay (minutes)',
+        default=5,
+        help='Delay between retry attempts in minutes'
+    )
+
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Configuration name must be unique!')
     ]
@@ -84,30 +96,119 @@ class MetabaseConfig(models.Model):
                     headers=headers
                 )
                 if response.status_code == 200:
-                    raise UserError(_("Connection successful! Connected as %s") % response.json().get('common_name', 'Unknown'))
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': _('Success'),
+                            'message': _('Connection successful! Connected as %s') % response.json().get('common_name', 'Unknown'),
+                            'type': 'success',
+                            'sticky': False,
+                        }
+                    }
                 else:
-                    raise UserError(_("Connection failed! Error: %s") % response.text)
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': _('Error'),
+                            'message': _("Connection failed! Error: %s") % response.text,
+                            'type': 'danger',
+                            'sticky': True,
+                        }
+                    }
             except Exception as e:
-                raise UserError(_("Connection failed! Error: %s") % str(e))
-        else:
-            raise UserError(_("Failed to get session token. Please check your credentials."))
-    
-    def notify_admin(self, subject, message):
-        """Send notification email to admin"""
-        self.ensure_one()
-        if self.email_notify:
-            try:
-                template_id = self.env.ref('mail.mail_notification_light')
-                template_values = {
-                    'subject': subject,
-                    'body_html': message,
-                    'email_to': self.email_notify,
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('Error'),
+                        'message': _("Connection failed! Error: %s") % str(e),
+                        'type': 'danger',
+                        'sticky': True,
+                    }
                 }
-                template_id.send_mail(self.id, email_values=template_values, force_send=True)
-                return True
+        else:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Error'),
+                    'message': _("Failed to get session token. Please check your credentials."),
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
+    
+    @api.model
+    def _get_default_notify_portcities_template(self):
+        """
+        default mail template for sending a mail to portcities
+        """
+        template_ref = (
+            "cl_contact_metabase.metabase_config_notify_portcities_mail_template"
+        )
+        return self.env.ref(template_ref, raise_if_not_found=False)
+
+    def action_notify_portcities(self, error_type=None, error_message=None, sync_log_url=None):
+        """ Action notify portcities with enhanced error information """
+        action_mode = "portcities"
+        for conf in self:
+            send_to_portcities = conf.email_notify
+            subject_detail = error_type or "Synchronization Issue"
+            subject = _("Metabase Integration: %s", subject_detail)
+            
+            if not send_to_portcities:
+                continue
+                
+            # Format recipient name from email address
+            local_part = send_to_portcities.split('@')[0]
+            name_part = local_part.replace('.', ' ').replace('_', ' ').replace('-', ' ')
+            notify_name = ' '.join(word.capitalize() for word in name_part.split())
+            
+            # Prepare context with detailed error information
+            from datetime import datetime
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            context = {
+                "user_name": notify_name,
+                "error_type": error_type or "Synchronization Error",
+                "error_message": error_message or "Unknown error occurred during Metabase synchronization",
+                "error_time": current_time,
+                "subject_detail": subject_detail,
+                "sync_log_url": sync_log_url or False
+            }
+            
+            mail_mode = f"abp_{action_mode}"
+            context[mail_mode] = True
+            
+            template_id = conf._get_default_notify_portcities_template()
+            if not template_id:
+                _logger.error("Email template for Metabase notification not found")
+                continue
+            
+            conf = conf.with_context(
+                **{
+                    "default_subject": subject,
+                    "default_email_to": send_to_portcities,
+                    "mail_notify_force_send": True,
+                },
+                **context
+            )
+            
+            # Send mail with error handling
+            try:
+                template_id.with_context(**context).send_mail(
+                    conf.id,
+                    force_send=True,
+                    raise_exception=True,
+                )
+                _logger.info("Notification sent to %s about Metabase integration issue: %s", 
+                           notify_name, error_type or "Synchronization Error")
             except Exception as e:
-                _logger.error(f"Failed to send notification email: {str(e)}")
-        return False
+                error_msg = f'Failed to send email notification: {str(e)}'
+                _logger.error(error_msg)
+                raise UserError(error_msg)
     
     def get_question_results(self, question_id):
         """Get results from a specific Metabase question/card"""
@@ -154,51 +255,95 @@ class MetabaseConfig(models.Model):
             return results['data']['rows']
         return []
     
+    def get_question_id(self, question_url):
+        """
+        Get the question ID from the question URL
+        Example URL : https://metabase.dev.colearn.id/question/1032-odoo-student-details-live-class-db
+        return 1032
+        """
+        last_part = question_url.split('/')[-1]
+        # Extract the numeric ID from the beginning of the last part
+        question_id = last_part.split('-')[0]
+        return question_id
+    
     # Student Data Methods
     def get_student_details(self):
         """Get student details from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.student_details_question_id)
+        question_id = self.get_question_id(self.student_details_question_url)
+        return self.get_rows_only(question_id)
     
     def get_parent_details(self):
         """Get parent details from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.parent_details_question_id)
+        question_id = self.get_question_id(self.parent_details_question_url)
+        return self.get_rows_only(question_id)
     
     def get_student_lead_stage(self):
         """Get student lead stage details from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.student_lead_stage_question_id)
+        question_id = self.get_question_id(self.student_lead_stage_question_url)
+        return self.get_rows_only(question_id)
     
     # Attendance Data Methods
     def get_paid_class_joined_events(self):
         """Get data for paid classes that students joined from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.paid_class_joined_question_id)
+        question_id = self.get_question_id(self.paid_class_joined_question_url)
+        return self.get_rows_only(question_id)
     
     def get_paid_class_details(self):
         """Get detailed information about paid classes from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.paid_class_details_question_id)
+        question_id = self.get_question_id(self.paid_class_details_question_url)
+        return self.get_rows_only(question_id)
     
     # Subscription Data Methods
     def get_subscription_data(self):
         """Get subscription data from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.subscription_data_question_id)
+        question_id = self.get_question_id(self.subscription_data_question_url)
+        return self.get_rows_only(question_id)
     
     # Payment Data Methods
     def get_slot_selection_succeeded(self):
         """Get data for successful slot selections from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.slot_selection_succeeded_question_id)
+        question_id = self.get_question_id(self.slot_selection_succeeded_question_url)
+        return self.get_rows_only(question_id)
     
     def get_payment_received(self):
         """Get data for payments received from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.payment_received_question_id)
+        question_id = self.get_question_id(self.payment_received_question_url)
+        return self.get_rows_only(question_id)
     
     def get_paid_access_paused(self):
         """Get data for paid access that has been paused from Metabase"""
         self.ensure_one()
-        return self.get_rows_only(self.paid_access_paused_question_id)
+        question_id = self.get_question_id(self.paid_access_paused_question_url)
+        return self.get_rows_only(question_id)
+
+    def action_show_student_details(self):
+        """Get student details from Metabase then show in the pop up view (wizard)"""
+        self.ensure_one()
+        student_details = self.get_student_details()
+        
+        # Format the student details as a string for display in the wizard
+        formatted_details = json.dumps(student_details, indent=2) if student_details else 'No student details found'
+        
+        # Create wizard
+        wizard = self.env['response.metabase'].create({
+            'student_details': formatted_details
+        })
+        
+        # Return action to open wizard
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'response.metabase',
+            'view_mode': 'form',
+            'res_id': wizard.id,
+            'target': 'new',
+            'view_id': self.env.ref('cl_contact_metabase.view_response_metabase_form').id,
+            'flags': {'mode': 'readonly'},
+        }
