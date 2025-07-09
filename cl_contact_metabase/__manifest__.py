@@ -20,8 +20,6 @@
         'views/sync_log_views.xml',
         'wizards/response_metabase_views.xml',
         'views/res_partner_views.xml',
-        # 'views/menu_views.xml',
-        # 'wizards/import_metabase_contacts_views.xml',
     ],
     'demo': [],
     'installable': True,
