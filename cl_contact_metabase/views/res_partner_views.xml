@@ -6,7 +6,7 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@name='button_box']" position="inside">
+            <!-- <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_sync_from_metabase" 
                         type="object" 
                         class="oe_stat_button" 
@@ -17,29 +17,26 @@
                         <span class="o_stat_text">Metabase</span>
                     </div>
                 </button>
-            </xpath>
+            </xpath> -->
             
             <notebook position="inside">
-                <page string="Metabase Data" name="metabase_data" invisible="not metabase_id">
+                <page string="Student Info" name="student_info" invisible="not is_student">
                     <group>
-                        <group string="Metabase Information">
-                            <field name="metabase_id"/>
-                            <field name="metabase_parent_id" invisible="not is_parent"/>
-                            <field name="metabase_last_sync"/>
-                            <field name="is_student"/>
-                            <field name="is_parent"/>
+                        <group string="Student Basic Information">
+                            <field name="is_student" invisible="1"/>
+                            <field name="metabase_user_id" readonly="1"/>
+                            <field name="metabase_school" readonly="1"/>
+                            <field name="metabase_city" readonly="1"/>
+                            <field name="metabase_notification_consent" readonly="1"/>
                         </group>
-                        <group string="Student Information" invisible="not is_student">
-                            <field name="grade"/>
-                            <field name="curriculum"/>
-                            <field name="lead_stage"/>
+                        <group string="Student Additional Information">
+                            <field name="metabase_grade" readonly="1"/>
+                            <field name="metabase_curriculum" readonly="1"/>
                         </group>
                     </group>
-                    <group string="Subscription Information" invisible="not is_student">
-                        <field name="subscription_status"/>
-                        <field name="subscription_start_date"/>
-                        <field name="subscription_end_date"/>
-                        <field name="subscription_package"/>
+                    <group name="student_sync_info" string="Student Sync Information" invisible="not is_student">
+                        <field name="metabase_last_sync" readonly="1"/>
+                        <field name="metabase_sync_log_id" readonly="1"/>
                     </group>
                 </page>
             </notebook>
@@ -47,7 +44,7 @@
     </record>
     
     <!-- Add Metabase fields to partner search view -->
-    <record id="view_res_partner_filter_metabase" model="ir.ui.view">
+    <!-- <record id="view_res_partner_filter_metabase" model="ir.ui.view">
         <field name="name">res.partner.select.metabase</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_res_partner_filter"/>
@@ -75,10 +72,10 @@
                 <filter string="Subscription Status" name="subscription_status" context="{'group_by': 'subscription_status'}"/>
             </xpath>
         </field>
-    </record>
+    </record> -->
     
     <!-- Add Metabase fields to partner list view -->
-    <record id="view_partner_list_metabase" model="ir.ui.view">
+    <!-- <record id="view_partner_list_metabase" model="ir.ui.view">
         <field name="name">res.partner.list.metabase</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_tree"/>
@@ -92,5 +89,5 @@
                 <field name="subscription_status" optional="hide" invisible="not is_student"/>
             </field>
         </field>
-    </record>
+    </record> -->
 </odoo>

@@ -1,1 +1,1 @@
-from . import import_metabase_contacts
+from . import response_metabase

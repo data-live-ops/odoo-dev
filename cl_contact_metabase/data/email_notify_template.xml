@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="metabase_config_notify_portcities_mail_template" model="mail.template">
+            <field name="name">Metabase Integration Failed</field>
+            <field name="model_id" ref="cl_contact_metabase.model_metabase_config"/>
+            <field name="subject">Metabase Integration Alert: {{ ctx.get('subject_detail', 'Sync Process Failed') }}</field>
+            <field name="email_from">"Lincoln School" &lt;noreply@lincolnschool.edu.np&gt;</field>
+            <field name="email_to">{{ object.email_notify }}</field>
+            <field name="description">Metabase Integration Failed</field>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #f2f2f2; padding: 15px; border-bottom: 3px solid #d9534f;">
+                        <h2 style="color: #d9534f; margin: 0;">Metabase Integration Alert</h2>
+                    </div>
+                    
+                    <div style="padding: 20px;">
+                        <p>Hello <strong><t t-out="ctx.get('user_name', 'Administrator')"/></strong>,</p>
+                        
+                        <p>This is an automated notification to inform you that the Metabase integration process has encountered an issue:</p>
+                        
+                        <div style="background-color: #f8f8f8; border-left: 4px solid #d9534f; padding: 15px; margin: 15px 0;">
+                            <p><strong>Error Type:</strong> <t t-out="ctx.get('error_type', 'Synchronization Error')"/></p>
+                            <p><strong>Time of Occurrence:</strong> <t t-out="ctx.get('error_time', 'Unknown')"/></p>
+                            <p><strong>Configuration:</strong> <t t-out="object.name"/></p>
+                            <t t-if="ctx.get('error_message')">
+                                <p><strong>Error Message:</strong> <t t-out="ctx.get('error_message')"/></p>
+                            </t>
+                        </div>
+                        
+                        <t t-if="ctx.get('sync_log_url')">
+                            <p>For detailed information about this error, please visit:</p>
+                            <p style="text-align: center;">
+                                <a t-att-href="ctx.get('sync_log_url')" style="display: inline-block; background-color: #337ab7; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">View Error Details</a>
+                            </p>
+                        </t>
+                        
+                        <p>Please take appropriate action to resolve this issue. If you need assistance, please contact your system administrator.</p>
+                        
+                        <p>Thank you,<br/>Lincoln School System</p>
+                    </div>
+                    
+                    <div style="background-color: #f2f2f2; padding: 10px; font-size: 12px; color: #777; text-align: center;">
+                        <p>This is an automated message. Please do not reply directly to this email.</p>
+                    </div>
+                </div>
+            </field>
+            <field name="auto_delete" eval="False"/>
+        </record>
+    </data>
+</odoo>
+
