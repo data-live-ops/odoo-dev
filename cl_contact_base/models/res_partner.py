@@ -18,8 +18,8 @@ class ResPartner(models.Model):
         ('ibu', 'Ibu'),
     ])
     related_parent_id = fields.Many2one('res.partner')
-    metabase_user_id = fields.Char(string="User ID")
-    metabase_parent_id = fields.Char(string="Parent ID")
+    metabase_user_id = fields.Char(string="User ID", index=True)
+    metabase_parent_id = fields.Char(string="Parent ID", index=True)
     metabase_grade = fields.Char(string="Grades")
     metabase_school = fields.Char(string="School Name")
     metabase_curriculum = fields.Char(string="Curriculum")
@@ -30,3 +30,6 @@ class ResPartner(models.Model):
 
     # 'Attendance' tab
     attendance_ids = fields.One2many('res.partner.attendance', 'partner_id')
+
+    # 'Payment' tab
+    payment_ids = fields.One2many('res.partner.payment', 'partner_id')

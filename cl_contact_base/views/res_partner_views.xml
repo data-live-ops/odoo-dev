@@ -65,6 +65,23 @@
                 </page>
                 <!-- New tab 'Payment' -->
                 <page name='payment' string="Payment">
+                    <field name="payment_ids" readonly="1">
+                        <list>
+                            <field name="rounded_opt_in_date"/>
+                            <field name="course_batch_pairs"/>
+                            <field name="paid_amount"/>
+                            <field name="package_name"/>
+                            <field name="payment_link" widget="url"/>
+                            <field name="invoice_id"/>
+                            <field name="payment_method"/>
+                            <field name="payment_channel"/>
+                            <field name="sales_agent_email"/>
+                            <field name="payment_context"/>
+                            <field name="payment_for_date"/>
+                            <field name="retention_payment_type"/>
+                            <field name="name"/>
+                        </list>
+                    </field>
                 </page>
                 <!-- New tab 'Sync Log' -->
                 <page name='sync_log' string="Sync Log">
