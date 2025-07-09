@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_response_metabase_form" model="ir.ui.view">
+        <field name="name">response.metabase.form</field>
+        <field name="model">response.metabase</field>
+        <field name="arch" type="xml">
+            <form string="Response from Metabase" create="false" edit="true">
+                <sheet>
+                    <group>
+                        <!-- add label for student details -->
+                        <label for="student_details" string="Student Details"/>
+                        <div>
+                            <field name="student_details" invisible="not student_details"/>
+                        </div>
+                    </group>
+                        
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_import_metabase_contacts" model="ir.actions.act_window">
+        <field name="name">Show Response from Metabase</field>
+        <field name="res_model">response.metabase</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>
