@@ -46,8 +46,8 @@
             <xpath expr="//field[@name='function']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <!-- New tab 'Attendance' -->
             <xpath expr="//page[@name='internal_notes']" position="after">
+                <!-- New tab 'Attendance' -->
                 <page name='attendance' string="Attendance">
                     <field name="attendance_ids" readonly="1">
                         <list>
@@ -59,6 +59,15 @@
                             <field name="time_of_joining"/>
                         </list>
                     </field>
+                </page>
+                <!-- New tab 'Subscription' -->
+                <page name='subscription' string="Subscription">
+                </page>
+                <!-- New tab 'Payment' -->
+                <page name='payment' string="Payment">
+                </page>
+                <!-- New tab 'Sync Log' -->
+                <page name='sync_log' string="Sync Log">
                 </page>
             </xpath>
         </field>
