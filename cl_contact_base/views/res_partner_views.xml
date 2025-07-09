@@ -1,0 +1,93 @@
+<odoo>
+
+    <record id="view_partner_form" model="ir.ui.view">
+        <field name="name">view.partner.form.cl_contact_base</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <!-- Form header customizations -->
+            <xpath expr="//div[hasclass('oe_title')]" position="attributes">
+                <attribute name="groups">base.group_erp_manager</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]/field[@name='company_type']" position="after">
+                <div class="o_row">
+                    <label for="contact_type"/>
+                    <field name="contact_type" widget="radio" options="{'horizontal': true}"/>
+                </div>
+                <div class="o_row">
+                    <label for="parent_type" invisible="contact_type == 'student'"/>
+                    <field name="parent_type" invisible="contact_type == 'student'"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='parent_id']" position="after">
+                <div class="o_row">
+                    <field name="related_parent_id" widget="res_partner_many2one" placeholder="Parent Name..." invisible="contact_type == 'parent'"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='vat']" position="before">
+                <field name="metabase_user_id"/>
+                <field name="metabase_parent_id" invisible="contact_type == 'student'"/>
+                <field name="metabase_city"/>
+                <field name="metabase_grade"/>
+                <field name="metabase_school"/>
+                <field name="metabase_curriculum"/>
+            </xpath>
+            <xpath expr="//field[@name='category_id']" position="before">
+                <field name="metabase_lead_status"/>
+                <field name="metabase_student_phase"/>
+                <field name="metabase_notification_consent"/>
+            </xpath>
+            <xpath expr="//field[@name='vat']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='website']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='function']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//page[@name='internal_notes']" position="after">
+                <!-- New tab 'Attendance' -->
+                <page name='attendance' string="Attendance">
+                    <field name="attendance_ids" readonly="1">
+                        <list>
+                            <field name="live_class_id" column_invisible="1"/>
+                            <field name="class_subject"/>
+                            <field name="class_topic"/>
+                            <field name="teacher_name"/>
+                            <field name="class_start_time"/>
+                            <field name="time_of_joining"/>
+                        </list>
+                    </field>
+                </page>
+                <!-- New tab 'Subscription' -->
+                <page name='subscription' string="Subscription">
+                </page>
+                <!-- New tab 'Payment' -->
+                <page name='payment' string="Payment">
+                    <field name="payment_ids" readonly="1">
+                        <list>
+                            <field name="rounded_opt_in_date"/>
+                            <field name="course_batch_pairs"/>
+                            <field name="paid_amount"/>
+                            <field name="package_name"/>
+                            <field name="payment_link" widget="url"/>
+                            <field name="invoice_id"/>
+                            <field name="payment_method"/>
+                            <field name="payment_channel"/>
+                            <field name="sales_agent_email"/>
+                            <field name="payment_context"/>
+                            <field name="payment_for_date"/>
+                            <field name="retention_payment_type"/>
+                            <field name="name"/>
+                        </list>
+                    </field>
+                </page>
+                <!-- New tab 'Sync Log' -->
+                <page name='sync_log' string="Sync Log">
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
