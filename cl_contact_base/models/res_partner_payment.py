@@ -5,7 +5,7 @@ class ResPartnerPayment(models.Model):
     """ New model for res.partner payment """
 
     _name = 'res.partner.payment'
-    _description = 'Res Partner Payment'
+    _description = 'Payment'
 
     partner_id = fields.Many2one('res.partner')
     rounded_opt_in_date = fields.Datetime(

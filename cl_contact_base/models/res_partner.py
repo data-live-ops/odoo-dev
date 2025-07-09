@@ -31,5 +31,32 @@ class ResPartner(models.Model):
     # 'Attendance' tab
     attendance_ids = fields.One2many('res.partner.attendance', 'partner_id')
 
+    # 'Subscription' tab
+    subscription_id = fields.Many2one('res.partner.subs')
+    subscription_name = fields.Char(
+        related='subscription_id.name',
+        readonly=True
+    )
+    status = fields.Char(
+        related='subscription_id.status',
+        readonly=True
+    )
+    next_payment_date = fields.Date(
+        related='subscription_id.next_payment_date',
+        readonly=True
+    )
+    start_date = fields.Datetime(
+        related='subscription_id.start_date',
+        readonly=True
+    )
+    end_date = fields.Datetime(
+        related='subscription_id.end_date',
+        readonly=True
+    )
+    cancellation_date = fields.Char(
+        related='subscription_id.cancellation_date',
+        readonly=True
+    )
+
     # 'Payment' tab
     payment_ids = fields.One2many('res.partner.payment', 'partner_id')

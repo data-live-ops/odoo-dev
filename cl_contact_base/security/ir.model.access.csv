@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_res_partner_attendance_user,access.res.partner.attendance.user,model_res_partner_attendance,base.group_user,1,1,1,1
+access_res_partner_subs_user,access.res.partner.subs.user,model_res_partner_subs,base.group_user,1,1,1,1
 access_res_partner_payment_user,access.res.partner.payment.user,model_res_partner_payment,base.group_user,1,1,1,1

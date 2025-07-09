@@ -62,6 +62,17 @@
                 </page>
                 <!-- New tab 'Subscription' -->
                 <page name='subscription' string="Subscription">
+                    <group>
+                        <group>
+                            <field name="subscription_id"/>
+                            <field name="subscription_name"/>
+                            <field name="status"/>
+                            <field name="next_payment_date"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                            <field name="cancellation_date"/>
+                        </group>
+                    </group>
                 </page>
                 <!-- New tab 'Payment' -->
                 <page name='payment' string="Payment">

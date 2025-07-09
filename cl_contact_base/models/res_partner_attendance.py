@@ -5,7 +5,7 @@ class ResPartnerAttendance(models.Model):
     """ New model for res.partner attendance """
 
     _name = 'res.partner.attendance'
-    _description = 'Res Partner Attendance'
+    _description = 'Attendance'
 
     partner_id = fields.Many2one('res.partner')
     live_class_id = fields.Char(
