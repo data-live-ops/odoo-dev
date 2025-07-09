@@ -6,6 +6,7 @@ class ResPartner(models.Model):
 
     _inherit = 'res.partner'
 
+    # Form header
     contact_type = fields.Selection(
         [
             ('student', 'Student'),
@@ -26,3 +27,6 @@ class ResPartner(models.Model):
     metabase_lead_status = fields.Char(string="Lead Stage")
     metabase_student_phase = fields.Char(string="Student Phase")
     metabase_notification_consent = fields.Char(string="Notification Consent")
+
+    # 'Attendance' tab
+    attendance_ids = fields.One2many('res.partner.attendance', 'partner_id')

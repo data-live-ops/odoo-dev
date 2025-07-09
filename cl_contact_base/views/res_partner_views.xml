@@ -5,6 +5,7 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+            <!-- Form header customizations -->
             <xpath expr="//div[hasclass('oe_title')]" position="attributes">
                 <attribute name="groups">base.group_erp_manager</attribute>
             </xpath>
@@ -44,6 +45,21 @@
             </xpath>
             <xpath expr="//field[@name='function']" position="attributes">
                 <attribute name="invisible">1</attribute>
+            </xpath>
+            <!-- New tab 'Attendance' -->
+            <xpath expr="//page[@name='internal_notes']" position="after">
+                <page name='attendance' string="Attendance">
+                    <field name="attendance_ids" readonly="1">
+                        <list>
+                            <field name="live_class_id" column_invisible="1"/>
+                            <field name="class_subject"/>
+                            <field name="class_topic"/>
+                            <field name="teacher_name"/>
+                            <field name="class_start_time"/>
+                            <field name="time_of_joining"/>
+                        </list>
+                    </field>
+                </page>
             </xpath>
         </field>
     </record>
