@@ -25,7 +25,11 @@ class ResPartner(models.Model):
     metabase_curriculum = fields.Char(string="Curriculum")
     metabase_city = fields.Char(string="Onboarding Location")
     metabase_lead_status = fields.Char(string="Lead Stage")
-    metabase_student_phase = fields.Char(string="Student Phase")
+    metabase_student_phase = fields.Selection(selection=[
+        ('paid', 'Paid Student'),
+        ('new', 'New Student'),
+        ('non_paid', 'Non Paid Student'),
+    ], string="Student Phase", copy=False)
     metabase_notification_consent = fields.Char(string="Notification Consent")
 
     # 'Attendance' tab
@@ -60,3 +64,4 @@ class ResPartner(models.Model):
 
     # 'Payment' tab
     payment_ids = fields.One2many('res.partner.payment', 'partner_id')
+    sync_log_ids = fields.One2many('res.partner.sync.log', 'partner_id')
