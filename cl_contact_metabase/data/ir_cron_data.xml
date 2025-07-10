@@ -12,13 +12,21 @@
             <field name="nextcall" eval="(DateTime.now().replace(hour=0, minute=5, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
         </record>
 
-        <record model="ir.actions.server" id="action_sync_student_from_metabase">
-            <field name="name">Sync Student FROM Metabase</field>
-            <field name="model_id" ref="base.model_res_partner"/>
-            <field name="binding_model_id" ref="base.model_res_partner"/>
+        <record model="ir.actions.server" id="action_refresh_student_from_metabase">
+            <field name="name">Refresh Student FROM Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_student_from_metabase()</field>
+        </record>
+        <record model="ir.actions.server" id="action_refresh_lead_stage_from_metabase">
+            <field name="name">Refresh Lead Stage FROM Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="binding_model_id" ref="model_res_partner"/>
+            <field name="binding_view_types">form,list</field>
+            <field name="state">code</field>
+            <field name="code">records.action_sync_lead_stage_from_metabase()</field>
         </record>
     </data>
 </odoo>

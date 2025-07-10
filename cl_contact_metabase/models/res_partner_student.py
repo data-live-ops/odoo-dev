@@ -117,7 +117,7 @@ class ResPartner(models.Model):
                 "X-Metabase-Session": config.session_token
             }
             
-            # Prepare API endpoint URL with configurable settings
+            # Prepare Student API endpoint URL with configurable settings
             student_question = config.student_details_question_url
             if not student_question:
                 raise UserError("Student details question URL not configured")
@@ -154,7 +154,7 @@ class ResPartner(models.Model):
             for student_data in data:
                 vals = self._prepare_student_vals(student_data, sync_log)
                 metabase_user_id = student_data[0]
-                student_contact_id = self.search([("metabase_user_id", "=", str(metabase_user_id))])
+                student_contact_id = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
                 
                 if student_contact_id:
                     student_contact_id.write(vals)
@@ -172,7 +172,6 @@ class ResPartner(models.Model):
                     "updated_count": updated_count,
                 }
             )
-            sssss
             _logger.info("Student sync completed successfully")
             return True
 
@@ -187,6 +186,140 @@ class ResPartner(models.Model):
             sync_log.action_notify()
             _logger.error("Student sync failed: %s", str(e))
             return False
+    
+    def action_sync_manual_student(self):
+        """Manual sync action for student data from Metabase"""
+        self.ensure_one()
+        if not self.is_student:
+            raise UserError("Only student records can be synced from Metabase")
+
+        sync_log = self.env["metabase.sync.log"].create({
+            "state": "processing",
+            "data_type": "student",
+            "start_date": fields.Datetime.now(),
+            "sync_type": "manual",
+            "partner_id": self.id
+        })
+
+        try:
+            # Get configuration
+            config = self.env["metabase.config"].search(
+                [("active", "=", True)], limit=1
+            )
+            if not config:
+                raise UserError("No active Metabase configuration found")
+            
+            # Get token
+            if not config.check_session():
+                raise UserError("Failed to get valid session token")
+            headers = {
+                "X-Metabase-Session": config.session_token
+            }
+            
+            # Prepare API endpoint URL with configurable settings
+            student_question = config.student_details_question_url
+            if not student_question:
+                raise UserError("Student details question URL not configured")
+            
+            question_id = config.get_question_id(student_question)
+            
+            # First get the question details
+            card_response = requests.get(
+                f"{config.base_url.rstrip('/')}/api/card/{question_id}",
+                headers=headers
+            )
+            
+            if card_response.status_code != 200:
+                raise UserError(f"Error getting question details: {card_response.text}")
+            
+            # Then get the results
+            results_response = requests.post(
+                f"{config.base_url.rstrip('/')}/api/card/{question_id}/query",
+                headers=headers
+            )
+            
+            if not results_response.status_code == 202:
+                raise UserError(f"Error getting question results: {results_response.text}")
+            
+            data = []
+            results = results_response.json()
+            if results and 'data' in results and 'rows' in results['data']:
+                data = results['data']['rows']
+
+            sync_log.raw_response = results
+            created_count = 0
+            updated_count = 0
+
+            for student_data in data:
+                metabase_user_id = student_data[0]
+                if self.metabase_user_id == metabase_user_id:
+                    vals = self._prepare_student_vals(student_data, sync_log)
+                    self.write(vals)
+                    updated_count += 1
+
+            # Update sync log
+            if updated_count == 0:
+                sync_log.write(
+                    {
+                        "state": "failed",
+                        "end_date": fields.Datetime.now(),
+                        "error_message": "No student data found to sync",
+                    }
+                )
+                sync_log.action_notify()
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('Error'),
+                        'message': _('No student data found to sync from Metabase'),
+                        'type': 'warning',
+                        'sticky': False,
+                    }
+                }
+            sync_log.write(
+                {
+                    "state": "done",
+                    "end_date": fields.Datetime.now(),
+                    "total_records": len(data),
+                    "created_count": created_count,
+                    "updated_count": updated_count,
+                }
+            )
+            _logger.info("Student sync completed successfully")
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Success'),
+                    'message': _('Student %s successfully synced from Metabase') % self.name,
+                    'type': 'success',
+                    'sticky': False,
+                }
+            }
+        except Exception as e:
+            error_message = str(e)
+            _logger.error(f"Error syncing student {self.name} from Metabase: {error_message}")
+            
+            # Update sync log
+            sync_log.write({
+                'state': 'failed',
+                'end_date': fields.Datetime.now(),
+                'error_message': error_message,
+            })
+            sync_log.action_notify()
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Error'),
+                    'message': _('Failed to sync student %s from Metabase: %s') % (self.name, error_message),
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
     
     def action_sync_from_metabase(self):
         """Sync this contact from Metabase data"""

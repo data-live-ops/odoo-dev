@@ -27,7 +27,7 @@ class MetabaseSyncLog(models.Model):
     ], default='auto', required=True, string="Sync Type")
     data_type = fields.Selection([
         ('student', 'Student'),
-        ('lead', 'Student Lead'),
+        ('lead', 'Lead Stages'),
         ('parent', 'Parent')
     ], default='student', required=True, string="Data Type")
     partner_id = fields.Many2one('res.partner', string="Partner", index=True)
