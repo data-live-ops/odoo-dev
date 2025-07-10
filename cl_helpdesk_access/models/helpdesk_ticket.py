@@ -30,7 +30,9 @@ class HelpdeskTicket(models.Model):
                     ticket.user_id not in ticket.ticket_follower_ids\
                     .mapped('user_id').ids:
                 ticket.with_context(skip_follower_update=True)\
-                    .write({'ticket_follower_ids': [(4, ticket.user_id.id)]})
+                    .write({'ticket_follower_ids': [
+                        (4, ticket.user_id.partner_id.id)
+                    ]})
         return res
 
     @api.model_create_multi
