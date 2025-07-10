@@ -25,11 +25,65 @@ class ResPartner(models.Model):
     metabase_curriculum = fields.Char(string="Curriculum")
     metabase_city = fields.Char(string="Onboarding Location")
     metabase_lead_status = fields.Char(string="Lead Stage")
-    metabase_student_phase = fields.Char(string="Student Phase")
+    metabase_student_phase = fields.Selection(selection=[
+        ('paid', 'Paid Student'),
+        ('new', 'New Student'),
+        ('non_paid', 'Non Paid Student'),
+    ], string="Student Phase", copy=False)
     metabase_notification_consent = fields.Char(string="Notification Consent")
 
     # 'Attendance' tab
     attendance_ids = fields.One2many('res.partner.attendance', 'partner_id')
 
+    # 'Subscription' tab
+    subscription_id = fields.Many2one('res.partner.subs')
+    subscription_name = fields.Char(
+        related='subscription_id.name',
+        readonly=True
+    )
+    status = fields.Char(
+        related='subscription_id.status',
+        readonly=True
+    )
+    next_payment_date = fields.Date(
+        related='subscription_id.next_payment_date',
+        readonly=True
+    )
+    start_date = fields.Datetime(
+        related='subscription_id.start_date',
+        readonly=True
+    )
+    end_date = fields.Datetime(
+        related='subscription_id.end_date',
+        readonly=True
+    )
+    cancellation_date = fields.Char(
+        related='subscription_id.cancellation_date',
+        readonly=True
+    )
+
     # 'Payment' tab
     payment_ids = fields.One2many('res.partner.payment', 'partner_id')
+
+    # 'Sync Log' tab
+    sync_log_id = fields.Many2one('res.partner.sync.log')
+    last_sync_status = fields.Char(
+        related='sync_log_id.last_sync_status',
+        readonly=True,
+        tracking=True,
+    )
+    last_manual_sync_status = fields.Selection(
+        related='sync_log_id.last_manual_sync_status',
+        readonly=True,
+        tracking=True,
+    )
+    last_sync = fields.Datetime(
+        related='sync_log_id.last_sync',
+        readonly=True,
+        tracking=True,
+    )
+    last_manual_sync = fields.Datetime(
+        related='sync_log_id.last_manual_sync',
+        readonly=True,
+        tracking=True,
+    )

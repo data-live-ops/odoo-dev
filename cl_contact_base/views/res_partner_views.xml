@@ -1,5 +1,47 @@
 <odoo>
 
+    <record id="view_partner_tree" model="ir.ui.view">
+        <field name="name">view.partner.tree.cl_contact_base</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <list position="replace">
+                <list>
+                    <field name="contact_type"/>
+                    <field name="name"/>
+                    <field name="metabase_grade"/>
+                    <field name="metabase_curriculum"/>
+                    <field name="phone"/>
+                    <field name="email"/>
+                    <field name="city"/>
+                    <field name="parent_type" optional="hide"/>
+                    <field name="metabase_lead_status" optional="hide"/>
+                    <field name="metabase_student_phase" optional="hide"/>
+                </list>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_res_partner_filter" model="ir.ui.view">
+        <field name="name">cl.contact.base.inherit.view.res.partner.filter</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <!-- Predefined Filters -->
+                <filter name="student" string="Student" domain="[('contact_type','=','student')]"/>
+                <filter name="parent" string="Parent" domain="[('contact_type','=','parent')]"/>
+            </xpath>
+            <xpath expr="//group/filter[@name='group_country']" position="after">
+                <!-- Predefined Group By -->
+                <filter name="group_contact_type" string="Contact Type" context="{'group_by':'contact_type'}"/>
+                <filter name="group_grades" string="Grades" context="{'group_by':'metabase_grade'}"/>
+                <filter name="group_lead_stage" string="Lead Stage" context="{'group_by':'metabase_lead_status'}"/>
+                <filter name="group_student_phase" string="Student Phase" context="{'group_by':'metabase_student_phase'}"/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_partner_form" model="ir.ui.view">
         <field name="name">view.partner.form.cl_contact_base</field>
         <field name="model">res.partner</field>
@@ -21,7 +63,8 @@
             </xpath>
             <xpath expr="//field[@name='parent_id']" position="after">
                 <div class="o_row">
-                    <field name="related_parent_id" widget="res_partner_many2one" placeholder="Parent Name..." invisible="contact_type == 'parent'"/>
+                    <field name="related_parent_id" widget="res_partner_many2one" placeholder="Parent Name..." invisible="contact_type == 'parent'"
+                        domain="[('contact_type', '=', 'parent')]"/>
                 </div>
             </xpath>
             <xpath expr="//field[@name='vat']" position="before">
@@ -62,6 +105,17 @@
                 </page>
                 <!-- New tab 'Subscription' -->
                 <page name='subscription' string="Subscription">
+                    <group>
+                        <group>
+                            <field name="subscription_id"/>
+                            <field name="subscription_name"/>
+                            <field name="status"/>
+                            <field name="next_payment_date"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                            <field name="cancellation_date"/>
+                        </group>
+                    </group>
                 </page>
                 <!-- New tab 'Payment' -->
                 <page name='payment' string="Payment">
@@ -85,6 +139,15 @@
                 </page>
                 <!-- New tab 'Sync Log' -->
                 <page name='sync_log' string="Sync Log">
+                    <group>
+                        <group>
+                            <field name="sync_log_id" invisible="1"/>
+                            <field name="last_sync_status" widget="badge"/>
+                            <field name="last_manual_sync_status" widget="badge"/>
+                            <field name="last_sync"/>
+                            <field name="last_manual_sync"/>
+                        </group>
+                    </group>
                 </page>
             </xpath>
         </field>
