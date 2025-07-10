@@ -39,23 +39,6 @@
                         <field name="metabase_sync_log_id" readonly="1"/>
                     </group>
                 </page>
-                <!-- <page name="sync_log" string="Sync Log Manually" invisible="not is_student">
-                    <field name="metabase_sync_log_ids" mode="list" readonly="1">
-                        <list default_order="name asc">
-                            <field name="name"/>
-                            <field name="create_date"/>
-                            <field name="start_date"/>
-                            <field name="end_date"/>
-                            <field name="total_records"/>
-                            <field name="created_count"/>
-                            <field name="updated_count"/>
-                            <field name="sync_type"/>
-                            <field name="state" decoration-success="state == 'done'" 
-                                decoration-danger="state == 'failed'"
-                                decoration-info="state == 'processing'"/>
-                        </list>
-                    </field>
-                </page> -->
             </notebook>
         </field>
     </record>
