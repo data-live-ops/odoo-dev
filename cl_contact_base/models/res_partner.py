@@ -64,4 +64,26 @@ class ResPartner(models.Model):
 
     # 'Payment' tab
     payment_ids = fields.One2many('res.partner.payment', 'partner_id')
-    sync_log_ids = fields.One2many('res.partner.sync.log', 'partner_id')
+
+    # 'Sync Log' tab
+    sync_log_id = fields.Many2one('res.partner.sync.log')
+    last_sync_status = fields.Char(
+        related='sync_log_id.last_sync_status',
+        readonly=True,
+        tracking=True,
+    )
+    last_manual_sync_status = fields.Selection(
+        related='sync_log_id.last_manual_sync_status',
+        readonly=True,
+        tracking=True,
+    )
+    last_sync = fields.Datetime(
+        related='sync_log_id.last_sync',
+        readonly=True,
+        tracking=True,
+    )
+    last_manual_sync = fields.Datetime(
+        related='sync_log_id.last_manual_sync',
+        readonly=True,
+        tracking=True,
+    )

@@ -139,14 +139,15 @@
                 </page>
                 <!-- New tab 'Sync Log' -->
                 <page name='sync_log' string="Sync Log">
-                    <field name="sync_log_ids" readonly="1">
-                        <list>
+                    <group>
+                        <group>
+                            <field name="sync_log_id" invisible="1"/>
                             <field name="last_sync_status" widget="badge"/>
                             <field name="last_manual_sync_status" widget="badge"/>
                             <field name="last_sync"/>
                             <field name="last_manual_sync"/>
-                        </list>
-                    </field>
+                        </group>
+                    </group>
                 </page>
             </xpath>
         </field>
