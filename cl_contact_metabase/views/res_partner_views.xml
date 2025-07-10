@@ -39,7 +39,7 @@
                         <field name="metabase_sync_log_id" readonly="1"/>
                     </group>
                 </page>
-                <page name="sync_log" string="Sync Log Manually" invisible="not is_student">
+                <!-- <page name="sync_log" string="Sync Log Manually" invisible="not is_student">
                     <field name="metabase_sync_log_ids" mode="list" readonly="1">
                         <list default_order="name asc">
                             <field name="name"/>
@@ -55,7 +55,7 @@
                                 decoration-info="state == 'processing'"/>
                         </list>
                     </field>
-                </page>
+                </page> -->
             </notebook>
         </field>
     </record>
