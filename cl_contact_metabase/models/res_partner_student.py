@@ -19,9 +19,9 @@ class ResPartner(models.Model):
         "metabase.sync.log", string="Metabase Sync Log", tracking=True
     )
     metabase_last_sync = fields.Datetime(string='Last Sync with Metabase')
-    metabase_sync_log_ids = fields.One2many(
-        "metabase.sync.log", "partner_id", string="Metabase Sync Logs"
-    )
+    # metabase_sync_log_ids = fields.One2many(
+    #     "metabase.sync.log", "partner_id", string="Metabase Sync Logs"
+    # )
 
     @api.model
     def _sync_students_with_retry(self):
