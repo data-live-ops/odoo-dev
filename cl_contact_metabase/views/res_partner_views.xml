@@ -22,15 +22,15 @@
                     <group>
                         <group string="Student Basic Information">
                             <field name="is_student" invisible="1"/>
-                            <field name="metabase_user_id" readonly="0"/>
-                            <field name="metabase_school" readonly="0"/>
-                            <field name="metabase_city" readonly="0"/>
+                            <field name="metabase_user_id" readonly="1"/>
+                            <field name="metabase_school" readonly="1"/>
+                            <field name="metabase_city" readonly="1"/>
                             <field name="metabase_notification_consent" readonly="1"/>
                         </group>
                         <group string="Student Additional Information">
                             <field name="metabase_grade" readonly="1"/>
                             <field name="metabase_curriculum" readonly="1"/>
-                            <field name="metabase_lead_status" readonly="0"/>
+                            <field name="metabase_lead_status" readonly="1"/>
                             
                         </group>
                     </group>
@@ -39,7 +39,7 @@
                         <field name="metabase_sync_log_id" readonly="1"/>
                     </group>
                 </page>
-                <page name="sync_log" string="Sync Log" invisible="not is_student">
+                <page name="sync_log" string="Sync Log Manually" invisible="not is_student">
                     <field name="metabase_sync_log_ids" mode="list" readonly="1">
                         <list default_order="name asc">
                             <field name="name"/>
@@ -57,17 +57,6 @@
                     </field>
                 </page>
             </notebook>
-        </field>
-    </record>
-
-    <record id="view_partner_form_contact_base_inherit" model="ir.ui.view">
-        <field name="name">res.partner.form.contact.base.inherit</field>
-        <field name="model">res.partner</field>
-        <field name="inherit_id" ref="cl_contact_base.view_partner_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//page[@name='sync_log']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
         </field>
     </record>
 </odoo>
