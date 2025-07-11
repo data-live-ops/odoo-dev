@@ -142,6 +142,7 @@ class ResPartner(models.Model):
                     "end_date": fields.Datetime.now(),
                     "total_records": len(data),
                     "updated_count": updated_count,
+
                 }
             )
             _logger.info("Lead stage sync completed successfully")
@@ -227,6 +228,7 @@ class ResPartner(models.Model):
                 if self.metabase_user_id == metabase_user_id:
                     vals = self._prepare_lead_stage_vals(lead_stage_data, sync_log)
                     self.write(vals)
+                    sync_log.partner_id = self.id
                     updated_count += 1
 
             sync_log.write(

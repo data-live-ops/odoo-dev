@@ -9,11 +9,9 @@
                 <field name="create_date"/>
                 <field name="start_date"/>
                 <field name="end_date"/>
-                <field name="total_records"/>
-                <field name="created_count"/>
-                <field name="updated_count"/>
+                <field name="data_type"/>
                 <field name="sync_type"/>
-                <field name="partner_id"/>
+                <field name="partner_id" optional="hide"/>
                 <field name="state" decoration-success="state == 'done'" 
                        decoration-danger="state == 'failed'"
                        decoration-info="state == 'processing'"/>
