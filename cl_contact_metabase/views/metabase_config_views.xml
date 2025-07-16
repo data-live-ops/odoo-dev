@@ -8,12 +8,14 @@
                 <header>
                     <field name="student_details_question_url" invisible="1"/>
                     <field name="student_lead_stage_question_url" invisible="1"/>
+                    <field name="parent_details_question_url" invisible="1"/>
                     <button name="get_session_token" string="Get Session Token" type="object"/>
                     <button name="test_connection" string="Test Connection" type="object" class="oe_highlight"/>
                     <button name="action_notify_portcities" string="Notify Admin" type="object" invisible="1"/>
                     <button name="action_show_student_details" invisible="1" string="Show Student Details" type="object"/>
                     <button name="run_action_sync_students" string="Sync Students" invisible="not student_details_question_url" type="object" class="oe_highlight" help="Manually run the student synchronization"/>
                     <button name="run_action_sync_lead_stage" string="Sync Lead Stage" invisible="not student_lead_stage_question_url" type="object" class="oe_highlight" help="Manually run the lead stage synchronization"/>
+                    <button name="run_action_sync_parents" string="Sync Parents" invisible="not parent_details_question_url" type="object" class="oe_highlight" help="Manually run the parent synchronization"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
