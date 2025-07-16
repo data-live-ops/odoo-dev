@@ -36,6 +36,7 @@ class ResPartner(models.Model):
     attendance_ids = fields.One2many('res.partner.attendance', 'partner_id')
 
     # 'Subscription' tab
+    subscription_ids = fields.One2many('res.partner.subs', 'subs_student_id')
     subscription_id = fields.Many2one('res.partner.subs')
     subscription_name = fields.Char(
         related='subscription_id.name',

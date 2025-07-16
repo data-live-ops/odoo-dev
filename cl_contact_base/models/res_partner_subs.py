@@ -8,30 +8,40 @@ class ResPartnerSubs(models.Model):
     _description = 'Subscription'
     _rec_name = 'subscription_id'
 
+    subs_student_id = fields.Many2one('res.partner')
     subscription_id = fields.Char(
         string="Subscription ID",
         readonly=True
     )
+    student_user_id = fields.Char(
+        string="Student User ID",
+        readonly=True
+    )
     name = fields.Char(
-        string="Package Name",
+        string="Subscription Name",
         readonly=True
     )
     status = fields.Char(
-        string="Subscription Status",
-        readonly=True
-    )
-    next_payment_date = fields.Date(
+        string="Status",
         readonly=True
     )
     start_date = fields.Datetime(
-        string="Subscription Start Date",
+        string="Start Date",
         readonly=True
     )
     end_date = fields.Datetime(
-        string="Subscription End Date",
+        string="End Date",
         readonly=True
     )
     cancellation_date = fields.Char(
         string="Cancellation Date",
+        readonly=True
+    )
+    payment_type = fields.Char(
+        string="Payment Type",
+        readonly=True
+    )
+    next_payment_date = fields.Date(
+        string="Next Payment Date",
         readonly=True
     )
