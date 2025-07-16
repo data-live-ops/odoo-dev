@@ -21,6 +21,24 @@
             <field name="code">records.action_sync_student_from_metabase()</field>
         </record>
 
+        <record id="ir_cron_sync_metabase_parent" model="ir.cron">
+            <field name="name">Sync Metabase Parent</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._sync_parent_with_retry()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=0, minute=15, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record model="ir.actions.server" id="action_refresh_parent_from_metabase">
+            <field name="name">Refresh Parent FROM Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="binding_model_id" ref="model_res_partner"/>
+            <field name="binding_view_types">form,list</field>
+            <field name="state">code</field>
+            <field name="code">records.action_sync_parent_from_metabase()</field>
+        </record>
         <record id="ir_cron_sync_metabase_lead_stage" model="ir.cron">
             <field name="name">Sync Metabase Lead Stage</field>
             <field name="model_id" ref="base.model_res_partner"/>

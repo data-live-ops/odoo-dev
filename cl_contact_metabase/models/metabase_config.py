@@ -409,4 +409,35 @@ class MetabaseConfig(models.Model):
                     'type': 'danger',
                 }
             }
+    
+    def run_action_sync_parents(self):
+        self.ensure_one()
+        self.with_delay().action_sync_parents()
+    
+    def action_sync_parents(self):
+        """Manually run the parent synchronization"""
+        self.ensure_one()
+        result = self.env['res.partner'].with_context(from_manual_sync=True)._sync_parent_with_retry()
+        if result:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Success'),
+                    'message': _('Parent synchronization completed successfully.'),
+                    'sticky': False,
+                    'type': 'success',
+                }
+            }
+        else:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Error'),
+                    'message': _('Parent synchronization failed. Please check the logs for details.'),
+                    'sticky': True,
+                    'type': 'danger',
+                }
+            }
 

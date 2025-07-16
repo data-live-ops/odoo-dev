@@ -1,5 +1,5 @@
 {
-    'name': 'Colearn Contact Metabase Integration',
+    'name': 'CoLearn Contact Metabase Integration',
     'version': '1.0',
     'category': 'Contacts',
     'summary': 'Integrate Metabase data with Odoo contacts',
@@ -27,3 +27,12 @@
     'auto_install': False,
     'license': 'LGPL-3',
 }
+
+# Sync Parent
+
+# Paid Class Joined
+# Paid Class Details
+# Subscription Data
+# Slot Selection Succeeded
+# Payment Received
+# Paid Access Paused

@@ -9,23 +9,15 @@ _logger = logging.getLogger(__name__)
 
 class ResPartner(models.Model):
     _inherit = 'res.partner'
-    
-    # Additional fields to identify the contact type
-    is_student = fields.Boolean(string='Is Student', default=False)
-    is_parent = fields.Boolean(string='Is Parent', default=False)
 
-    # Fields to store Metabase IDs
-    metabase_sync_log_id = fields.Many2one(
-        "metabase.sync.log", string="Metabase Sync Log", tracking=True
-    )
-    metabase_last_sync = fields.Datetime(string='Last Sync with Metabase')
-    metabase_sync_log_ids = fields.One2many(
-        "metabase.sync.log", "partner_id", string="Metabase Sync Logs"
-    )
+
+    metabase_student_ids = fields.Char(string="Student IDs")
+    student_parent_ids = fields.Many2many('res.partner', 'student_parent_rel_guardian', 'metabase_user_id', 'metabase_parent_id', string='Student Parents')
+
 
     @api.model
-    def _sync_students_with_retry(self):
-        """Scheduled function to sync students from Metabase with retry mechanism"""
+    def _sync_parent_with_retry(self):
+        """Scheduled function to sync parents from Metabase with retry mechanism"""
         # Get configuration
         config = self.env["metabase.config"].search([("active", "=", True)], limit=1)
         if not config:
@@ -42,63 +34,49 @@ class ResPartner(models.Model):
         
         while retry_count <= max_retries:
             if retry_count > 0:
-                _logger.info(f"Retry attempt {retry_count}/{max_retries} for Metabase student sync")
+                _logger.info(f"Retry attempt {retry_count}/{max_retries} for Metabase parent sync")
                 # Wait before retrying
                 time.sleep(retry_delay * 60)  # Convert minutes to seconds
                 
-            success = self._sync_students()
+            success = self._sync_parents()
             if success:
                 if retry_count > 0:
-                    _logger.info(f"Metabase student sync succeeded after {retry_count} retries")
+                    _logger.info(f"Metabase parent sync succeeded after {retry_count} retries")
                 return True
                 
             retry_count += 1
             
-        _logger.error(f"Metabase student sync failed after {max_retries} retries")
+        _logger.error(f"Metabase parent sync failed after {max_retries} retries")
         return False
     
     @api.model
-    def _prepare_student_vals(self, student, sync_log):
-        """Helper method to prepare student values from Metabase data"""                
+    def _prepare_parent_vals(self, parent, sync_log):
+        """Helper method to prepare parent values from Metabase data"""                
         return {
             # Metabase Fields
-            "metabase_user_id": str(student[0]),
-            "metabase_grade": str(student[5]),
-            "metabase_curriculum": str(student[6]),
-            "metabase_school": str(student[7]),
-            "metabase_city": str(student[4]),
-            "metabase_notification_consent": str(student[8]),
+            "metabase_parent_id": str(parent[0]),
 
             # Standard Odoo fields
-            "is_student": True,
+            "is_parent": True,
             "type": "contact",
-            "contact_type": "student",
-            "name": str(student[1]),
-            "email": str(student[2]),
-            "phone": student[3],
-            "city": str(student[4]),
+            "contact_type": "parent",
+            "name": str(parent[2]),
+            "phone": parent[3],
 
             "metabase_last_sync": fields.Datetime.now(),
             "metabase_sync_log_id": sync_log.id,
         }
     
     @api.model
-    def _check_metabase_session_token(self):
-        config = self.env["metabase.config"].search([("active", "=", True)], limit=1)
-        if not config:
-            raise UserError("Metabase configuration not found")
-        return config.check_session()
-    
-    @api.model
-    def _sync_students(self):
-        """Function to sync students from Metabase"""
+    def _sync_parents(self):
+        """Function to sync parents from Metabase"""
         sync_log = False
 
         try:
             sync_log = self.env["metabase.sync.log"].create(
                 {
                     "state": "processing",
-                    "data_type": "student",
+                    "data_type": "parent",
                     "start_date": fields.Datetime.now(),
                 }
             )
@@ -121,12 +99,12 @@ class ResPartner(models.Model):
                 "X-Metabase-Session": config.session_token
             }
             
-            # Prepare Student API endpoint URL with configurable settings
-            student_question = config.student_details_question_url
-            if not student_question:
-                raise UserError("Student details question URL not configured")
+            # Prepare Parent API endpoint URL with configurable settings
+            parent_question = config.parent_details_question_url
+            if not parent_question:
+                raise UserError("Parent details question URL not configured")
             
-            question_id = config.get_question_id(student_question)
+            question_id = config.get_question_id(parent_question)
             
             # First get the question details
             card_response = requests.get(
@@ -155,17 +133,46 @@ class ResPartner(models.Model):
             created_count = 0
             updated_count = 0
 
-            for student_data in data:
-                vals = self._prepare_student_vals(student_data, sync_log)
-                metabase_user_id = student_data[0]
-                student_contact_id = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
+            for parent_data in data:
+                vals = self._prepare_parent_vals(parent_data, sync_log)
+                metabase_parent_id = parent_data[0]
+                metabase_user_id = parent_data[1]
                 
-                if student_contact_id:
-                    student_contact_id.write(vals)
+                student_id = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
+                # Skip if student not found
+                if not student_id:
+                    _logger.warning(f"Student with ID {metabase_user_id} not found, skipping parent import")
+                    continue
+                    
+                parent_contact_id = self.search([("metabase_parent_id", "=", str(metabase_parent_id))], limit=1)
+
+                if parent_contact_id:
+                    if parent_contact_id.metabase_student_ids and metabase_user_id:
+                        # Convert existing student_ids to a set to remove duplicates
+                        existing_student_ids = set(parent_contact_id.metabase_student_ids.split(','))
+                        # Add new student_id if it doesn't already exist
+                        new_id = metabase_user_id
+                        if new_id not in existing_student_ids:
+                            existing_student_ids.add(new_id)
+                        # Convert back to comma-separated string
+                        vals['metabase_student_ids'] = ','.join(existing_student_ids)
+                    elif metabase_user_id:
+                        vals['metabase_student_ids'] = metabase_user_id
+
+                    parent_contact_id.write(vals)
                     updated_count += 1
                 else:
-                    student_contact_id = self.create(vals)
+                    # Handle case when metabase_student_ids is False or empty
+                    if metabase_user_id:
+                        # For new records, just use the guardian_id directly
+                        # No need to check for duplicates since it's a new record
+                        vals['metabase_student_ids'] = metabase_user_id
+                    # Create new parent
+                    parent_contact_id = self.create(vals)
                     created_count += 1
+                
+                student_id.student_parent_ids = [(4, parent_contact_id.id)]
+                parent_contact_id.student_parent_ids = [(4, student_id.id)]
 
             sync_log.write(
                 {
@@ -176,7 +183,18 @@ class ResPartner(models.Model):
                     "updated_count": updated_count,
                 }
             )
-            _logger.info("Student sync completed successfully")
+
+            if created_count == 0 and updated_count == 0:
+                sync_log.write(
+                    {
+                        "state": "failed",
+                        "error_message": "No parents matched with student records",
+                    }
+                )
+                sync_log.action_notify()
+                return False
+
+            _logger.info(f"Parent sync completed successfully: {created_count} created, {updated_count} updated")
             return True
 
         except Exception as e:
@@ -189,18 +207,18 @@ class ResPartner(models.Model):
                     }
                 )
                 sync_log.action_notify()
-            _logger.error("Student sync failed: %s", str(e))
+            _logger.error("Parent sync failed: %s", str(e))
             return False
     
-    def action_sync_manual_student(self):
-        """Manual sync action for student data from Metabase"""
+    def action_sync_parent_from_metabase(self):
+        """Manual sync action for parent data from Metabase"""
         self.ensure_one()
-        if not self.is_student:
-            raise UserError("Only student records can be synced from Metabase")
+        if not self.is_parent:
+            raise UserError("Only parent records can be synced from Metabase")
 
         sync_log = self.env["metabase.sync.log"].create({
             "state": "processing",
-            "data_type": "student",
+            "data_type": "parent",
             "start_date": fields.Datetime.now(),
             "sync_type": "manual",
             "partner_id": self.id
@@ -222,11 +240,11 @@ class ResPartner(models.Model):
             }
             
             # Prepare API endpoint URL with configurable settings
-            student_question = config.student_details_question_url
-            if not student_question:
-                raise UserError("Student details question URL not configured")
+            parent_question = config.parent_details_question_url
+            if not parent_question:
+                raise UserError("Parent details question URL not configured")
             
-            question_id = config.get_question_id(student_question)
+            question_id = config.get_question_id(parent_question)
             
             # First get the question details
             card_response = requests.get(
@@ -255,10 +273,10 @@ class ResPartner(models.Model):
             created_count = 0
             updated_count = 0
 
-            for student_data in data:
-                metabase_user_id = student_data[0]
-                if self.metabase_user_id == metabase_user_id:
-                    vals = self._prepare_student_vals(student_data, sync_log)
+            for parent_data in data:
+                metabase_parent_id = parent_data[0]
+                if self.metabase_parent_id == metabase_parent_id:
+                    vals = self._prepare_parent_vals(parent_data, sync_log)
                     self.write(vals)
                     updated_count += 1
 
@@ -268,7 +286,7 @@ class ResPartner(models.Model):
                     {
                         "state": "failed",
                         "end_date": fields.Datetime.now(),
-                        "error_message": "No student data found to sync",
+                        "error_message": "No parent data found to sync",
                     }
                 )
                 sync_log.action_notify()
@@ -277,7 +295,7 @@ class ResPartner(models.Model):
                     'tag': 'display_notification',
                     'params': {
                         'title': _('Error'),
-                        'message': _('No student data found to sync from Metabase'),
+                        'message': _('No parent data found to sync from Metabase'),
                         'type': 'warning',
                         'sticky': False,
                     }
@@ -291,21 +309,21 @@ class ResPartner(models.Model):
                     "updated_count": updated_count,
                 }
             )
-            _logger.info("Student sync completed successfully")
+            _logger.info("Parent sync completed successfully")
             
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
                     'title': _('Success'),
-                    'message': _('Student %s successfully synced from Metabase') % self.name,
+                    'message': _('Parent %s successfully synced from Metabase') % self.name,
                     'type': 'success',
                     'sticky': False,
                 }
             }
         except Exception as e:
             error_message = str(e)
-            _logger.error(f"Error syncing student {self.name} from Metabase: {error_message}")
+            _logger.error(f"Error syncing parent {self.name} from Metabase: {error_message}")
             
             # Update sync log
             sync_log.write({
@@ -320,7 +338,7 @@ class ResPartner(models.Model):
                 'tag': 'display_notification',
                 'params': {
                     'title': _('Error'),
-                    'message': _('Failed to sync student %s from Metabase: %s') % (self.name, error_message),
+                    'message': _('Failed to sync parent %s from Metabase: %s') % (self.name, error_message),
                     'type': 'danger',
                     'sticky': True,
                 }
