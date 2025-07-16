@@ -93,12 +93,35 @@
                 <!-- New tab 'Attendance' -->
                 <page name='attendance' string="Attendance">
                     <field name="attendance_ids" readonly="1">
+                        <form string="Detail Class" readonly="1">
+                            <sheet>
+                                <group>
+                                    <field name="partner_id"/>  
+                                    <field name="live_class_id"/>
+                                    <field name="student_user_id"/>
+                                    <field name="time_of_joining"/>
+                                </group>
+                                <notebook>
+                                    <page name="class_attendance" string="Detail Class">
+                                        <field name="class_attendance_ids">
+                                            <list readonly="1">
+                                                <field name="live_class_id" column_invisible="1"/>
+                                                <field name="class_subject"/>
+                                                <field name="class_topic"/>
+                                                <field name="teacher_name"/>
+                                                <field name="class_start_time"/>
+                                            </list>
+                                        </field>
+                                    </page>
+                                </notebook>
+                            </sheet>
+                        </form>
                         <list>
-                            <field name="live_class_id" column_invisible="1"/>
-                            <field name="class_subject"/>
+                            <field name="live_class_id"/>
                             <field name="class_topic"/>
+                            <field name="class_subject"/>
                             <field name="teacher_name"/>
-                            <field name="class_start_time"/>
+                            <field name="student_user_id" column_invisible="1"/>
                             <field name="time_of_joining"/>
                         </list>
                     </field>

@@ -33,7 +33,7 @@ class ResPartner(models.Model):
     metabase_notification_consent = fields.Char(string="Notification Consent")
 
     # 'Attendance' tab
-    attendance_ids = fields.One2many('res.partner.attendance', 'partner_id')
+    attendance_ids = fields.One2many('res.partner.attendance.main', 'partner_id')
 
     # 'Subscription' tab
     subscription_ids = fields.One2many('res.partner.subs', 'subs_student_id')
