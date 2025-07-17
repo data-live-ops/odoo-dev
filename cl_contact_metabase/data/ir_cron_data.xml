@@ -57,5 +57,23 @@
             <field name="state">code</field>
             <field name="code">records.action_sync_lead_stage_from_metabase()</field>
         </record>
+        <record id="ir_cron_sync_metabase_subscription" model="ir.cron">
+            <field name="name">Sync Metabase Subscription</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._sync_student_subscription_with_retry()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=0, minute=45, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        <record model="ir.actions.server" id="action_refresh_subscription_from_metabase">
+            <field name="name">Refresh Subscription FROM Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="binding_model_id" ref="model_res_partner"/>
+            <field name="binding_view_types">form,list</field>
+            <field name="state">code</field>
+            <field name="code">records.action_sync_subscription_from_metabase()</field>
+        </record>
     </data>
 </odoo>

@@ -28,7 +28,8 @@ class MetabaseSyncLog(models.Model):
     data_type = fields.Selection([
         ('student', 'Student'),
         ('lead', 'Lead Stages'),
-        ('parent', 'Parent')
+        ('parent', 'Parent'),
+        ('subscription', 'Subscription')
     ], default='student', required=True, string="Data Type")
     partner_id = fields.Many2one('res.partner', string="Partner", index=True)
 
@@ -67,6 +68,8 @@ class MetabaseSyncLog(models.Model):
             data_type = 'Student Lead'
         elif self.data_type == 'parent':
             data_type = 'Parent'
+        elif self.data_type == 'subscription':
+            data_type = 'Subscription'
         return data_type
     
     def action_notify(self):

@@ -28,11 +28,10 @@
     'license': 'LGPL-3',
 }
 
-# Sync Parent
-
-# Paid Class Joined
-# Paid Class Details
 # Subscription Data
-# Slot Selection Succeeded
+# attendance Paid Class Main
+# attendance Paid Class Details
+
+# Payment Slot Selection Succeeded
 # Payment Received
-# Paid Access Paused
+# Payment Paid Access Paused
