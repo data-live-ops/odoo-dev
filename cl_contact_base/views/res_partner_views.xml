@@ -128,18 +128,37 @@
                 </page>
                 <!-- New tab 'Subscription' -->
                 <page name='subscription' string="Subscription" invisible="contact_type not in ['student', 'parent']">
-                    <field name="subscription_ids" mode="list" readonly="1">
+                    <field name="subscription_ids" mode="list,form" readonly="1">
                         <list default_order="name asc">
                             <field name="subscription_id"/>
                             <field name="student_user_id"/>
                             <field name="name"/>
-                            <field name="start_date"/>
-                            <field name="end_date"/>
+                            <field name="subs_start_date"/>
+                            <field name="subs_end_date"/>
                             <field name="payment_type" optional="hide"/>
                             <field name="cancellation_date" optional="hide"/>
-                            <field name="next_payment_date"/>
+                            <field name="subs_next_payment_date"/>
                             <field name="status"/>
                         </list>
+                        <form>
+                            <sheet> 
+                                <group>
+                                    <group>
+                                        <field name="subscription_id"/>
+                                        <field name="student_user_id"/>
+                                        <field name="name"/>
+                                    </group>
+                                    <group>
+                                        <field name="subs_start_date"/>
+                                        <field name="subs_end_date"/>
+                                        <field name="payment_type" optional="hide"/>
+                                        <field name="cancellation_date" optional="hide"/>
+                                        <field name="subs_next_payment_date"/>
+                                        <field name="status"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </form>
                     </field>
                 </page>
                 <!-- New tab 'Payment' -->

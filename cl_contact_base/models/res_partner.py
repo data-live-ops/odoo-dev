@@ -46,16 +46,16 @@ class ResPartner(models.Model):
         related='subscription_id.status',
         readonly=True
     )
-    next_payment_date = fields.Date(
-        related='subscription_id.next_payment_date',
+    next_payment_date = fields.Char(
+        related='subscription_id.subs_next_payment_date',
         readonly=True
     )
-    start_date = fields.Datetime(
-        related='subscription_id.start_date',
+    start_date = fields.Char(
+        related='subscription_id.subs_start_date',
         readonly=True
     )
-    end_date = fields.Datetime(
-        related='subscription_id.end_date',
+    end_date = fields.Char(
+        related='subscription_id.subs_end_date',
         readonly=True
     )
     cancellation_date = fields.Char(

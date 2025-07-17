@@ -25,12 +25,12 @@ class ResPartnerSubs(models.Model):
         string="Status",
         readonly=True
     )
-    start_date = fields.Datetime(
-        string="Start Date",
+    subs_start_date = fields.Char(
+        string="Subs Start Date",
         readonly=True
     )
-    end_date = fields.Datetime(
-        string="End Date",
+    subs_end_date = fields.Char(
+        string="Subs End Date",
         readonly=True
     )
     cancellation_date = fields.Char(
@@ -41,7 +41,7 @@ class ResPartnerSubs(models.Model):
         string="Payment Type",
         readonly=True
     )
-    next_payment_date = fields.Date(
+    subs_next_payment_date = fields.Char(
         string="Next Payment Date",
         readonly=True
     )

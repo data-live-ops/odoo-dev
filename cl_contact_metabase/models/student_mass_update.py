@@ -23,3 +23,11 @@ class ResPartner(models.Model):
 
             record.with_delay().action_sync_manual_lead_stage()
         return {'type': 'ir.actions.client', 'tag': 'soft_reload'}
+
+    def action_sync_subscription_from_metabase(self):
+        for record in self:
+            if not record.is_student:
+                continue
+
+            record.with_delay().action_sync_student_subscription_from_metabase()
+        return {'type': 'ir.actions.client', 'tag': 'soft_reload'}
