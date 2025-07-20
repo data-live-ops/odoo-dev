@@ -4,3 +4,4 @@ access_res_partner_attendance_detail_user,access.res.partner.attendance.detail.u
 access_res_partner_subs_user,access.res.partner.subs.user,model_res_partner_subs,base.group_user,1,1,1,1
 access_res_partner_sync_log_user,access.res.partner.sync.log.user,model_res_partner_sync_log,base.group_user,1,1,1,1
 access_res_partner_payment_recieved_user,access.res.partner.payment.recieved.user,model_res_partner_payment_recieved,base.group_user,1,1,1,1
+access_res_partner_payment_slot_selection_user,access.res.partner.payment.slot.selection.user,model_res_partner_payment_slot_selection,base.group_user,1,1,1,1

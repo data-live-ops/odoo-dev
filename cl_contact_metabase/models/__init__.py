@@ -7,3 +7,4 @@ from . import res_partner_parent
 from . import res_partner_subscription
 from . import res_partner_attendance
 from . import res_partner_payment_receive
+from . import res_partner_payment_slot_selection

@@ -25,3 +25,23 @@ class ResPartnerPaymentRecieved(models.Model):
     payment_context = fields.Char(string="Payment Context", readonly=True)
     payment_for_date = fields.Char(string="Payment For Date", readonly=True)
     retention_payment_type = fields.Char(string="Retention Payment Type", readonly=True)
+
+
+class ResPartnerPaymentSlotSelection(models.Model):
+    """ New model for res.partner payment slot selection """
+
+    _name = 'res.partner.payment.slot.selection'
+    _description = 'Payment Slot Selection'
+    _rec_name = 'hash_id'
+
+    # Core fields from Metabase
+    hash_id = fields.Char(string="Hash ID", index=True, help="Unique identifier for payment slot selection")
+    package_subscription_id = fields.Char(string="Package Subscription ID", index=True, readonly=True, help="ID of the package subscription")
+    metabase_user_id = fields.Char(string="Metabase User ID", index=True, readonly=True, help="Metabase user ID")
+    package_id = fields.Char(string="Package ID", readonly=True, help="ID of the package")
+    course_batch_pairs = fields.Text(string="Course Batch Pairs", readonly=True, help="Course and batch pair information")
+    status = fields.Char(string="Status", readonly=True, help="Status of the payment slot selection")
+    rounded_opt_in_date = fields.Char(string="Rounded Opt-in Date", readonly=True, help="Rounded opt-in date")
+    
+    # Relationship field
+    student_id = fields.Many2one('res.partner', string="Student", index=True, help="Related student partner")
