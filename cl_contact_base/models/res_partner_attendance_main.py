@@ -7,16 +7,16 @@ class ResPartnerAttendanceMain(models.Model):
     _name = 'res.partner.attendance.main'
     _description = 'Attendance'
 
-    partner_id = fields.Many2one('res.partner', string="Partner")
+    partner_id = fields.Many2one('res.partner', string="Partner", index=True)
     student_user_id = fields.Char(
         string="Student User ID",
-        readonly=True,
+        readonly=True, index=True
     )
     live_class_id = fields.Char(
         string="Class ID",
-        readonly=True,
+        readonly=True, index=True
     )
-    time_of_joining = fields.Datetime(
+    time_of_joining = fields.Char(
         string="Class Joined At",
         readonly=True,
     )
@@ -49,4 +49,4 @@ class ResPartnerAttendanceDetail(models.Model):
         string="Class Teacher",
         readonly=True,
     )
-    class_start_time = fields.Datetime(readonly=True)
+    class_start_time = fields.Char(readonly=True)

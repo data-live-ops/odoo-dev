@@ -91,15 +91,22 @@
             </xpath>
             <xpath expr="//page[@name='internal_notes']" position="after">
                 <!-- New tab 'Attendance' -->
-                <page name='attendance' string="Attendance">
+                <page name='attendance' string="Attendance" invisible="contact_type not in ['student', 'parent']">
                     <field name="attendance_ids" readonly="1">
                         <form string="Detail Class" readonly="1">
                             <sheet>
                                 <group>
-                                    <field name="partner_id"/>  
-                                    <field name="live_class_id"/>
-                                    <field name="student_user_id"/>
-                                    <field name="time_of_joining"/>
+                                    <group>
+                                        <field name="partner_id"/>  
+                                        <field name="live_class_id"/>
+                                        <field name="student_user_id"/>
+                                        <field name="time_of_joining"/>
+                                    </group>
+                                    <group>
+                                        <field name="class_topic"/>
+                                        <field name="class_subject"/>
+                                        <field name="teacher_name"/>
+                                    </group>
                                 </group>
                                 <notebook>
                                     <page name="class_attendance" string="Detail Class">
@@ -162,23 +169,39 @@
                     </field>
                 </page>
                 <!-- New tab 'Payment' -->
-                <page name='payment' string="Payment">
-                    <field name="payment_ids" readonly="1">
+                <page name='payment' string="Payment" invisible="contact_type not in ['student', 'parent']">
+                    <field name="payment_received_ids" readonly="1" nolabel="1">
                         <list>
-                            <field name="rounded_opt_in_date"/>
-                            <field name="course_batch_pairs"/>
+                            <field name="invoice_id"/>
+                            <field name="metabase_user_id"/>
                             <field name="paid_amount"/>
                             <field name="package_name"/>
-                            <field name="payment_link" widget="url"/>
-                            <field name="invoice_id"/>
                             <field name="payment_method"/>
                             <field name="payment_channel"/>
-                            <field name="sales_agent_email"/>
-                            <field name="payment_context"/>
                             <field name="payment_for_date"/>
-                            <field name="retention_payment_type"/>
-                            <field name="name"/>
                         </list>
+                        <form string="Payment Received Details" readonly="1">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="student_id"/>
+                                        <field name="metabase_user_id"/>
+                                        <field name="invoice_id"/>
+                                        <field name="paid_amount"/>
+                                        <field name="package_name"/>
+                                        <field name="payment_link" widget="url"/>
+                                    </group>
+                                    <group>
+                                        <field name="payment_method"/>
+                                        <field name="payment_channel"/>
+                                        <field name="sales_agent_email"/>
+                                        <field name="payment_context"/>
+                                        <field name="payment_for_date"/>
+                                        <field name="retention_payment_type"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </form>
                     </field>
                 </page>
                 <!-- New tab 'Sync Log' -->

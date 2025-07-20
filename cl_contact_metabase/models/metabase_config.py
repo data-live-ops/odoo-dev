@@ -25,12 +25,12 @@ class MetabaseConfig(models.Model):
     student_details_question_url = fields.Char(string='Student Details Question URL', default='https://metabase.dev.colearn.id/question/1032-odoo-student-details-live-class-db')
     parent_details_question_url = fields.Char(string='Parent Details Question URL', default='https://metabase.dev.colearn.id/question/1033-odoo-student-details-parent')
     student_lead_stage_question_url = fields.Char(string='Student Lead Stage Question URL', default='https://metabase.dev.colearn.id/question/1103-odoo-student-details-lead-stage')
-    paid_class_joined_question_url = fields.Char(string='Paid Class Joined Question URL', default='https://metabase.dev.colearn.id/question/1028-odoo-student-details-paid-class-joined')
-    paid_class_details_question_url = fields.Char(string='Paid Class Details Question URL', default='https://metabase.dev.colearn.id/question/1027-odoo-student-details-paid-class-details')
     subscription_data_question_url = fields.Char(string='Subscription Data Question URL', default='https://metabase.dev.colearn.id/question/1026-odoo-student-details-subscription-data')
+    payment_received_question_url = fields.Char(string='Payment Received Question URL', default='https://metabase.dev.colearn.id/question/1030-odoo-payment-payment-recieved')
     slot_selection_succeeded_question_url = fields.Char(string='Slot Selection Succeeded Question URL', default='https://metabase.dev.colearn.id/question/1031-odoo-student-details-slot-selection-succeeded')
-    payment_received_question_url = fields.Char(string='Payment Received Question URL', default='https://metabase.dev.colearn.id/question/1030-odoo-student-details-payment-received')
     paid_access_paused_question_url = fields.Char(string='Paid Access Paused Question URL', default='https://metabase.dev.colearn.id/question/1034-odoo-student-details-paid-access-paused')
+    attendance_main_question_url = fields.Char(string='Attendance Main Question URL', default='https://metabase.dev.colearn.id/question/1028-odoo-attendance-paid-class-joined')
+    attendance_details_question_url = fields.Char(string='Attendance Details Question URL', default='https://metabase.dev.colearn.id/question/1027-odoo-attendance-paid-class-joined-class-details')
     
     # Retry Configuration
     max_retries = fields.Integer(
@@ -285,17 +285,24 @@ class MetabaseConfig(models.Model):
         question_id = self.get_question_id(self.student_lead_stage_question_url)
         return self.get_rows_only(question_id)
     
-    # Attendance Data Methods
-    def get_paid_class_joined_events(self):
-        """Get data for paid classes that students joined from Metabase"""
+    # Attendance Data Methods   
+    def get_attendance_main(self):
+        """Get attendance main data from Metabase"""
         self.ensure_one()
-        question_id = self.get_question_id(self.paid_class_joined_question_url)
+        question_id = self.get_question_id(self.attendance_main_question_url)
         return self.get_rows_only(question_id)
     
-    def get_paid_class_details(self):
-        """Get detailed information about paid classes from Metabase"""
+    def get_attendance_details(self):
+        """Get attendance details data from Metabase"""
         self.ensure_one()
-        question_id = self.get_question_id(self.paid_class_details_question_url)
+        question_id = self.get_question_id(self.attendance_details_question_url)
+        return self.get_rows_only(question_id)
+    
+    # Payment Received Data Methods
+    def get_payment_received(self):
+        """Get payment received data from Metabase"""
+        self.ensure_one()
+        question_id = self.get_question_id(self.payment_received_question_url)
         return self.get_rows_only(question_id)
     
     # Subscription Data Methods
@@ -467,6 +474,68 @@ class MetabaseConfig(models.Model):
                 'params': {
                     'title': _('Error'),
                     'message': _('Student subscription synchronization failed. Please check the logs for details.'),
+                    'sticky': True,
+                    'type': 'danger',
+                }
+            }
+
+    def run_action_sync_student_attendance(self):
+        self.ensure_one()
+        self.with_delay().action_sync_student_attendance()
+    
+    def action_sync_student_attendance(self):
+        """Manually run the student attendance synchronization"""
+        self.ensure_one()
+        result = self.env['res.partner'].with_context(from_manual_sync=True)._sync_attendance_with_retry()
+        if result:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Success'),
+                    'message': _('Student attendance synchronization completed successfully.'),
+                    'sticky': False,
+                    'type': 'success',
+                }
+            }
+        else:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Error'),
+                    'message': _('Student attendance synchronization failed. Please check the logs for details.'),
+                    'sticky': True,
+                    'type': 'danger',
+                }
+            }
+
+    def run_action_sync_payment_received(self):
+        self.ensure_one()
+        self.with_delay().action_sync_payment_received()
+    
+    def action_sync_payment_received(self):
+        """Manually run the payment received synchronization"""
+        self.ensure_one()
+        result = self.env['res.partner'].with_context(from_manual_sync=True)._sync_payment_receive_main_with_retry()
+        if result:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Success'),
+                    'message': _('Payment received synchronization completed successfully.'),
+                    'sticky': False,
+                    'type': 'success',
+                }
+            }
+        else:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Error'),
+                    'message': _('Payment received synchronization failed. Please check the logs for details.'),
                     'sticky': True,
                     'type': 'danger',
                 }
