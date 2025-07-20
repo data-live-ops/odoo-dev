@@ -119,5 +119,27 @@
             <field name="state">code</field>
             <field name="code">records.action_sync_payment_received_from_metabase()</field>
         </record>
+        
+        <!-- Payment Slot Selection Scheduled Action -->
+        <record id="ir_cron_sync_metabase_payment_slot_selection" model="ir.cron">
+            <field name="name">Sync Metabase Payment Slot Selection</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._sync_payment_slot_selection_with_retry()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=1, minute=0, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        
+        <!-- Payment Slot Selection Server Action -->
+        <record model="ir.actions.server" id="action_refresh_payment_slot_selection_from_metabase">
+            <field name="name">Refresh Payment Slot Selection FROM Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="binding_model_id" ref="model_res_partner"/>
+            <field name="binding_view_types">form,list</field>
+            <field name="state">code</field>
+            <field name="code">records.action_sync_payment_slot_selection_from_metabase()</field>
+        </record>
     </data>
 </odoo>
