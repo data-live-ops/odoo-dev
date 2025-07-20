@@ -28,7 +28,6 @@
     'license': 'LGPL-3',
 }
 
-# Subscription Data
 # attendance Paid Class Main
 # attendance Paid Class Details
 

@@ -5,3 +5,5 @@ from . import student_mass_update
 from . import res_partner_lead_stage
 from . import res_partner_parent
 from . import res_partner_subscription
+from . import res_partner_attendance
+from . import res_partner_payment_receive

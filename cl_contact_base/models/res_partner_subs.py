@@ -8,14 +8,14 @@ class ResPartnerSubs(models.Model):
     _description = 'Subscription'
     _rec_name = 'subscription_id'
 
-    subs_student_id = fields.Many2one('res.partner')
+    subs_student_id = fields.Many2one('res.partner', index=True)
     subscription_id = fields.Char(
         string="Subscription ID",
-        readonly=True
+        readonly=True, index=True
     )
     student_user_id = fields.Char(
         string="Student User ID",
-        readonly=True
+        readonly=True, index=True
     )
     name = fields.Char(
         string="Subscription Name",

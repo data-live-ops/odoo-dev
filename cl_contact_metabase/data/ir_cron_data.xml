@@ -75,5 +75,49 @@
             <field name="state">code</field>
             <field name="code">records.action_sync_subscription_from_metabase()</field>
         </record>
+        
+        <!-- Attendance Scheduled Action -->
+        <record id="ir_cron_sync_metabase_attendance" model="ir.cron">
+            <field name="name">Sync Metabase Attendance</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._sync_attendance_with_retry()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=1, minute=0, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        
+        <!-- Attendance Server Action -->
+        <record model="ir.actions.server" id="action_refresh_attendance_from_metabase">
+            <field name="name">Refresh Attendance FROM Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="binding_model_id" ref="model_res_partner"/>
+            <field name="binding_view_types">form,list</field>
+            <field name="state">code</field>
+            <field name="code">records.action_sync_attendance_from_metabase()</field>
+        </record>
+        
+        <!-- Payment Received Scheduled Action -->
+        <record id="ir_cron_sync_metabase_payment_received" model="ir.cron">
+            <field name="name">Sync Metabase Payment Received</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._sync_payment_received_with_retry()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=1, minute=0, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+        
+        <!-- Payment Received Server Action -->
+        <record model="ir.actions.server" id="action_refresh_payment_received_from_metabase">
+            <field name="name">Refresh Payment Received FROM Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="binding_model_id" ref="model_res_partner"/>
+            <field name="binding_view_types">form,list</field>
+            <field name="state">code</field>
+            <field name="code">records.action_sync_payment_received_from_metabase()</field>
+        </record>
     </data>
 </odoo>
