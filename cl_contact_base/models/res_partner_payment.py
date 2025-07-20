@@ -45,3 +45,21 @@ class ResPartnerPaymentSlotSelection(models.Model):
     
     # Relationship field
     student_id = fields.Many2one('res.partner', string="Student", index=True, help="Related student partner")
+
+
+class ResPartnerPaymentPaidAccess(models.Model):
+    """ New model for res.partner payment paid access """
+
+    _name = 'res.partner.payment.paid.access'
+    _description = 'Payment Paid Access'
+    _rec_name = 'name'
+
+    # Core fields from Metabase
+    metabase_user_id = fields.Char(string="Metabase User ID", index=True, readonly=True, help="Metabase user ID")
+    status = fields.Char(string="Status", readonly=True, help="Payment status")
+    package_id = fields.Char(string="Package ID", readonly=True, help="ID of the package")
+    name = fields.Char(string="Name", readonly=True, help="Payment name or description")
+    updated_at = fields.Char(string="Updated At", readonly=True, help="Last update timestamp from Metabase")
+    
+    # Relationship field
+    student_id = fields.Many2one('res.partner', string="Student", index=True, help="Related student partner")

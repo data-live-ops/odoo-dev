@@ -28,7 +28,7 @@ class MetabaseConfig(models.Model):
     subscription_data_question_url = fields.Char(string='Subscription Data Question URL', default='https://metabase.dev.colearn.id/question/1026-odoo-student-details-subscription-data')
     payment_received_question_url = fields.Char(string='Payment Received Question URL', default='https://metabase.dev.colearn.id/question/1030-odoo-payment-payment-recieved')
     payment_slot_selection_question_url = fields.Char(string='Payment Slot Selection Question URL', default='https://metabase.dev.colearn.id/question/1031-odoo-payment-slot-selection-succeeded')
-    paid_access_paused_question_url = fields.Char(string='Paid Access Paused Question URL', default='https://metabase.dev.colearn.id/question/1034-odoo-student-details-paid-access-paused')
+    payment_paid_access_question_url = fields.Char(string='Payment Paid Access Question URL', default='https://metabase.dev.colearn.id/question/1034-odoo-payment-paid-access-paused')
     attendance_main_question_url = fields.Char(string='Attendance Main Question URL', default='https://metabase.dev.colearn.id/question/1028-odoo-attendance-paid-class-joined')
     attendance_details_question_url = fields.Char(string='Attendance Details Question URL', default='https://metabase.dev.colearn.id/question/1027-odoo-attendance-paid-class-joined-class-details')
     
@@ -328,7 +328,7 @@ class MetabaseConfig(models.Model):
     def get_paid_access_paused(self):
         """Get data for paid access that has been paused from Metabase"""
         self.ensure_one()
-        question_id = self.get_question_id(self.paid_access_paused_question_url)
+        question_id = self.get_question_id(self.payment_paid_access_question_url)
         return self.get_rows_only(question_id)
 
     def action_show_student_details(self):
@@ -567,6 +567,37 @@ class MetabaseConfig(models.Model):
                 "params": {
                     "title": _("Error"),
                     "message": _("Payment slot selection synchronization failed. Please check the logs for details."),
+                    "sticky": True,
+                    "type": "danger",
+                }
+            }
+
+    def run_action_sync_payment_paid_access(self):
+        self.ensure_one()
+        self.with_delay().action_sync_payment_paid_access()
+    
+    def action_sync_payment_paid_access(self):
+        """Manually run the payment paid access synchronization"""
+        self.ensure_one()
+        result = self.env["res.partner"].with_context(from_manual_sync=True)._sync_payment_paid_access_with_retry()
+        if result:
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": _("Success"),
+                    "message": _("Payment paid access synchronization completed successfully."),
+                    "sticky": False,
+                    "type": "success",
+                }
+            }
+        else:
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": _("Error"),
+                    "message": _("Payment paid access synchronization failed. Please check the logs for details."),
                     "sticky": True,
                     "type": "danger",
                 }

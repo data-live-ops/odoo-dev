@@ -66,6 +66,7 @@ class ResPartner(models.Model):
     # 'Payment' tab
     payment_received_ids = fields.One2many('res.partner.payment.recieved', 'student_id', string="Payment Received")
     payment_slot_selection_ids = fields.One2many('res.partner.payment.slot.selection', 'student_id', string="Payment Slot Selection")
+    payment_paid_access_ids = fields.One2many('res.partner.payment.paid.access', 'student_id', string="Payment Paid Access")
 
     # 'Sync Log' tab
     sync_log_id = fields.Many2one('res.partner.sync.log')

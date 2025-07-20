@@ -33,6 +33,7 @@ class MetabaseSyncLog(models.Model):
         ('attendance', 'Attendance'),
         ('payment_received', 'Payment Received'),
         ('payment_slot_selection', 'Payment Slot Selection'),
+        ('payment_paid_access', 'Payment Paid Access'),
     ], default='student', required=True, string="Data Type")
     partner_id = fields.Many2one('res.partner', string="Partner", index=True)
 
