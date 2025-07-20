@@ -234,6 +234,33 @@
                             </sheet>
                         </form>
                     </field>
+                    
+                    <separator string="Payment Paid Access (Metabase)"/>
+                    <field name="payment_paid_access_ids" readonly="1" nolabel="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="metabase_user_id"/>
+                            <field name="status"/>
+                            <field name="package_id"/>
+                            <field name="updated_at"/>
+                        </list>
+                        <form string="Payment Paid Access Details" readonly="1">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="student_id"/>
+                                        <field name="name"/>
+                                        <field name="metabase_user_id"/>
+                                        <field name="status"/>
+                                    </group>
+                                    <group>
+                                        <field name="package_id"/>
+                                        <field name="updated_at"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
                 </page>
                 <!-- New tab 'Sync Log' -->
                 <page name='sync_log' string="Sync Log">

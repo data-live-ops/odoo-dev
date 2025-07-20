@@ -141,5 +141,27 @@
             <field name="state">code</field>
             <field name="code">records.action_sync_payment_slot_selection_from_metabase()</field>
         </record>
+
+        <!-- Payment Paid Access Sync Scheduled Action -->
+        <record id="ir_cron_sync_payment_paid_access" model="ir.cron">
+            <field name="name">Sync Payment Paid Access from Metabase</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._sync_payment_paid_access_with_retry()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=1, minute=10, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
+        </record>
+
+        <!-- Payment Paid Access Manual Sync Server Action -->
+        <record id="action_sync_payment_paid_access_from_metabase" model="ir.actions.server">
+            <field name="name">Sync Payment Paid Access from Metabase</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="binding_model_id" ref="base.model_res_partner"/>
+            <field name="binding_view_types">form,list</field>
+            <field name="state">code</field>
+            <field name="code">records.action_sync_payment_paid_access_from_metabase()</field>
+        </record>
     </data>
 </odoo>
