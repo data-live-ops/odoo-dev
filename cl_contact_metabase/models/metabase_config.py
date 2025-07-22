@@ -208,7 +208,8 @@ class MetabaseConfig(models.Model):
             except Exception as e:
                 error_msg = f'Failed to send email notification: {str(e)}'
                 _logger.error(error_msg)
-                raise UserError(error_msg)
+                # raise UserError(error_msg)
+                return False
     
     def get_question_results(self, question_id):
         """Get results from a specific Metabase question/card"""
