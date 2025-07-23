@@ -14,14 +14,6 @@
                     <button name="test_connection" string="Test Connection" type="object" class="oe_highlight"/>
                     <button name="action_notify_portcities" string="Notify Admin" type="object" invisible="1"/>
                     <button name="action_show_student_details" invisible="1" string="Show Student Details" type="object"/>
-                    <button name="run_action_sync_students" string="Sync Students" invisible="not student_details_question_url" type="object" class="oe_highlight" help="Manually run the student synchronization"/>
-                    <button name="run_action_sync_lead_stage" string="Sync Lead Stage" invisible="not student_lead_stage_question_url" type="object" class="oe_highlight" help="Manually run the lead stage synchronization"/>
-                    <button name="run_action_sync_parents" string="Sync Parents" invisible="not parent_details_question_url" type="object" class="oe_highlight" help="Manually run the parent synchronization"/>
-                    <button name="run_action_sync_student_subscriptions" string="Sync Subscriptions" invisible="not subscription_data_question_url" type="object" class="oe_highlight" help="Manually run the student subscription synchronization"/>
-                    <button name="run_action_sync_student_attendance" string="Sync Attendance" invisible="not attendance_main_question_url" type="object" class="oe_highlight" help="Manually run the student attendance synchronization"/>
-                    <button name="run_action_sync_payment_received" string="Sync Payment Received" invisible="not payment_received_question_url" type="object" class="oe_highlight" help="Manually run the payment received synchronization"/>
-                    <button name="run_action_sync_payment_slot_selection" string="Sync Payment Slot Selection" invisible="not payment_slot_selection_question_url" type="object" class="oe_highlight" help="Manually run the payment slot selection synchronization"/>
-                    <button name="run_action_sync_payment_paid_access" string="Sync Payment Paid Access" invisible="not payment_paid_access_question_url" type="object" class="oe_highlight" help="Manually run the payment paid access synchronization"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
@@ -47,20 +39,28 @@
                             <group>
                                 <group string="Student Data">
                                     <field name="student_details_question_url"/>
+                                    <button name="run_action_sync_students" string="Sync Students" invisible="not student_details_question_url" type="object" class="oe_highlight" help="Manually run the student synchronization"/>
                                     <field name="parent_details_question_url"/>
+                                    <button name="run_action_sync_parents" string="Sync Parents" invisible="not parent_details_question_url" type="object" class="oe_highlight" help="Manually run the parent synchronization"/>
                                     <field name="student_lead_stage_question_url"/>
+                                    <button name="run_action_sync_lead_stage" string="Sync Lead Stage" invisible="not student_lead_stage_question_url" type="object" class="oe_highlight" help="Manually run the lead stage synchronization"/>
                                 </group>
                                 <group string="Attendance Data">
                                     <field name="attendance_main_question_url"/>
+                                    <button name="run_action_sync_student_attendance" string="Sync Attendance" invisible="not attendance_main_question_url" type="object" class="oe_highlight" help="Manually run the student attendance synchronization"/>
                                     <field name="attendance_details_question_url"/>
                                 </group>
                                 <group string="Subscription Data">
                                     <field name="subscription_data_question_url"/>
+                                    <button name="run_action_sync_student_subscriptions" string="Sync Subscriptions" invisible="not subscription_data_question_url" type="object" class="oe_highlight" help="Manually run the student subscription synchronization"/>
                                 </group>
                                 <group string="Payment Data">
                                     <field name="payment_slot_selection_question_url"/>
+                                    <button name="run_action_sync_payment_slot_selection" string="Sync Payment Slot Selection" invisible="not payment_slot_selection_question_url" type="object" class="oe_highlight" help="Manually run the payment slot selection synchronization"/>
                                     <field name="payment_received_question_url"/>
+                                    <button name="run_action_sync_payment_received" string="Sync Payment Received" invisible="not payment_received_question_url" type="object" class="oe_highlight" help="Manually run the payment received synchronization"/>
                                     <field name="payment_paid_access_question_url"/>
+                                    <button name="run_action_sync_payment_paid_access" string="Sync Payment Paid Access" invisible="not payment_paid_access_question_url" type="object" class="oe_highlight" help="Manually run the payment paid access synchronization"/>
                                 </group>
                             </group>
                         </page>

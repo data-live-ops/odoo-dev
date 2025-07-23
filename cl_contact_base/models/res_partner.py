@@ -7,13 +7,11 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     # Form header
-    contact_type = fields.Selection(
-        [
-            ('student', 'Student'),
-            ('parent', 'Parent'),
-        ],
-        default='student',
-    )
+    contact_type = fields.Selection([
+        ('regular', 'Regular'),
+        ('student', 'Student'),
+        ('parent', 'Parent'),
+    ])
     parent_type = fields.Selection([
         ('ayah', 'Ayah'),
         ('ibu', 'Ibu'),

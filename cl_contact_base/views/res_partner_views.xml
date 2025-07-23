@@ -93,84 +93,6 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
             <xpath expr="//page[@name='internal_notes']" position="after">
-                <!-- New tab 'Attendance' -->
-                <page name='attendance' string="Attendance" invisible="contact_type not in ['student', 'parent']">
-                    <field name="attendance_ids" readonly="1">
-                        <form string="Detail Class" readonly="1">
-                            <sheet>
-                                <group>
-                                    <group>
-                                        <field name="partner_id"/>  
-                                        <field name="live_class_id"/>
-                                        <field name="student_user_id"/>
-                                        <field name="time_of_joining"/>
-                                    </group>
-                                    <group>
-                                        <field name="class_topic"/>
-                                        <field name="class_subject"/>
-                                        <field name="teacher_name"/>
-                                    </group>
-                                </group>
-                                <notebook>
-                                    <page name="class_attendance" string="Detail Class">
-                                        <field name="class_attendance_ids">
-                                            <list readonly="1">
-                                                <field name="live_class_id" column_invisible="1"/>
-                                                <field name="class_subject"/>
-                                                <field name="class_topic"/>
-                                                <field name="teacher_name"/>
-                                                <field name="class_start_time"/>
-                                            </list>
-                                        </field>
-                                    </page>
-                                </notebook>
-                            </sheet>
-                        </form>
-                        <list>
-                            <field name="live_class_id"/>
-                            <field name="class_topic"/>
-                            <field name="class_subject"/>
-                            <field name="teacher_name"/>
-                            <field name="student_user_id" column_invisible="1"/>
-                            <field name="time_of_joining"/>
-                        </list>
-                    </field>
-                </page>
-                <!-- New tab 'Subscription' -->
-                <page name='subscription' string="Subscription" invisible="contact_type not in ['student', 'parent']">
-                    <field name="subscription_ids" mode="list,form" readonly="1">
-                        <list default_order="name asc">
-                            <field name="subscription_id"/>
-                            <field name="student_user_id"/>
-                            <field name="name"/>
-                            <field name="subs_start_date"/>
-                            <field name="subs_end_date"/>
-                            <field name="payment_type" optional="hide"/>
-                            <field name="cancellation_date" optional="hide"/>
-                            <field name="subs_next_payment_date"/>
-                            <field name="status"/>
-                        </list>
-                        <form>
-                            <sheet> 
-                                <group>
-                                    <group>
-                                        <field name="subscription_id"/>
-                                        <field name="student_user_id"/>
-                                        <field name="name"/>
-                                    </group>
-                                    <group>
-                                        <field name="subs_start_date"/>
-                                        <field name="subs_end_date"/>
-                                        <field name="payment_type" optional="hide"/>
-                                        <field name="cancellation_date" optional="hide"/>
-                                        <field name="subs_next_payment_date"/>
-                                        <field name="status"/>
-                                    </group>
-                                </group>
-                            </sheet>
-                        </form>
-                    </field>
-                </page>
                 <!-- New tab 'Payment' -->
                 <page name='payment' string="Payment" invisible="contact_type not in ['student', 'parent']">
                     <separator string="Payment Received (Metabase)"/>
@@ -263,6 +185,84 @@
                                 </group>
                             </sheet>
                         </form>
+                    </field>
+                </page>
+                <!-- New tab 'Subscription' -->
+                <page name='subscription' string="Subscription" invisible="contact_type not in ['student', 'parent']">
+                    <field name="subscription_ids" mode="list,form" readonly="1">
+                        <list default_order="name asc">
+                            <field name="subscription_id"/>
+                            <field name="student_user_id"/>
+                            <field name="name"/>
+                            <field name="subs_start_date"/>
+                            <field name="subs_end_date"/>
+                            <field name="payment_type" optional="hide"/>
+                            <field name="cancellation_date" optional="hide"/>
+                            <field name="subs_next_payment_date"/>
+                            <field name="status"/>
+                        </list>
+                        <form>
+                            <sheet> 
+                                <group>
+                                    <group>
+                                        <field name="subscription_id"/>
+                                        <field name="student_user_id"/>
+                                        <field name="name"/>
+                                    </group>
+                                    <group>
+                                        <field name="subs_start_date"/>
+                                        <field name="subs_end_date"/>
+                                        <field name="payment_type" optional="hide"/>
+                                        <field name="cancellation_date" optional="hide"/>
+                                        <field name="subs_next_payment_date"/>
+                                        <field name="status"/>
+                                    </group>
+                                </group>
+                            </sheet>
+                        </form>
+                    </field>
+                </page>
+                <!-- New tab 'Attendance' -->
+                <page name='attendance' string="Attendance" invisible="contact_type not in ['student', 'parent']">
+                    <field name="attendance_ids" readonly="1">
+                        <form string="Detail Class" readonly="1">
+                            <sheet>
+                                <group>
+                                    <group>
+                                        <field name="partner_id"/>  
+                                        <field name="live_class_id"/>
+                                        <field name="student_user_id"/>
+                                        <field name="time_of_joining"/>
+                                    </group>
+                                    <group>
+                                        <field name="class_topic"/>
+                                        <field name="class_subject"/>
+                                        <field name="teacher_name"/>
+                                    </group>
+                                </group>
+                                <notebook>
+                                    <page name="class_attendance" string="Detail Class">
+                                        <field name="class_attendance_ids">
+                                            <list readonly="1">
+                                                <field name="live_class_id" column_invisible="1"/>
+                                                <field name="class_subject"/>
+                                                <field name="class_topic"/>
+                                                <field name="teacher_name"/>
+                                                <field name="class_start_time"/>
+                                            </list>
+                                        </field>
+                                    </page>
+                                </notebook>
+                            </sheet>
+                        </form>
+                        <list>
+                            <field name="live_class_id"/>
+                            <field name="class_topic"/>
+                            <field name="class_subject"/>
+                            <field name="teacher_name"/>
+                            <field name="student_user_id" column_invisible="1"/>
+                            <field name="time_of_joining"/>
+                        </list>
                     </field>
                 </page>
             </xpath>

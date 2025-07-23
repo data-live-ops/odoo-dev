@@ -156,7 +156,7 @@
 
         <!-- Payment Paid Access Manual Sync Server Action -->
         <record id="action_sync_payment_paid_access_from_metabase" model="ir.actions.server">
-            <field name="name">Sync Payment Paid Access from Metabase</field>
+            <field name="name">Refresh Payment Paid Access from Metabase</field>
             <field name="model_id" ref="base.model_res_partner"/>
             <field name="binding_model_id" ref="base.model_res_partner"/>
             <field name="binding_view_types">form,list</field>
