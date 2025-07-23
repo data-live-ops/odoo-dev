@@ -54,7 +54,7 @@
             <xpath expr="//div[hasclass('oe_title')]/field[@name='company_type']" position="after">
                 <div class="o_row">
                     <label for="contact_type"/>
-                    <field name="contact_type" widget="radio" options="{'horizontal': true}"/>
+                    <field name="contact_type"/>
                 </div>
                 <div class="o_row">
                     <label for="parent_type" invisible="contact_type == 'student'"/>

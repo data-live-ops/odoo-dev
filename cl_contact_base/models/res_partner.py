@@ -11,8 +11,7 @@ class ResPartner(models.Model):
         [
             ('student', 'Student'),
             ('parent', 'Parent'),
-        ],
-        default='student',
+        ]
     )
     parent_type = fields.Selection([
         ('ayah', 'Ayah'),
