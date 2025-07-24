@@ -4,7 +4,7 @@
         id="menu_queue_job_root"
         name="Job Queue"
         web_icon="queue_job,static/description/icon.png"
-        groups="group_queue_job_manager"
+        groups="base.group_no_one"
     />
 
     <menuitem id="menu_queue" name="Queue" parent="menu_queue_job_root" />
