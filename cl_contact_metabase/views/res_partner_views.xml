@@ -17,6 +17,7 @@
                         <group string="Student Basic Information">
                             <field name="is_student" invisible="1"/>
                             <field name="metabase_user_id" readonly="1"/>
+                            <field name="metabase_student_id" readonly="1"/>
                             <field name="metabase_school" readonly="1"/>
                             <field name="metabase_city" readonly="1"/>
                             <field name="metabase_notification_consent" readonly="1"/>

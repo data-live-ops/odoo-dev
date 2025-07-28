@@ -47,8 +47,8 @@
                                 </group>
                                 <group string="Attendance Data">
                                     <field name="attendance_main_question_url"/>
-                                    <button name="run_action_sync_student_attendance" string="Sync Attendance" invisible="not attendance_main_question_url" type="object" class="oe_highlight" help="Manually run the student attendance synchronization"/>
                                     <field name="attendance_details_question_url"/>
+                                    <button name="run_action_sync_student_attendance" string="Sync Attendance" invisible="not attendance_main_question_url" type="object" class="oe_highlight" help="Manually run the student attendance synchronization"/>
                                 </group>
                                 <group string="Subscription Data">
                                     <field name="subscription_data_question_url"/>

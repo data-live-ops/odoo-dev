@@ -63,20 +63,21 @@ class ResPartner(models.Model):
         return {
             # Metabase Fields
             "metabase_user_id": str(student[0]),
-            "metabase_grade": str(student[5]),
-            "metabase_curriculum": str(student[6]),
-            "metabase_school": str(student[7]),
-            "metabase_city": str(student[4]),
-            "metabase_notification_consent": str(student[8]),
+            "metabase_student_id": str(student[1]),
+            "metabase_grade": str(student[6]),
+            "metabase_curriculum": str(student[7]),
+            "metabase_school": str(student[8]),
+            "metabase_notification_consent": str(student[9]),
 
             # Standard Odoo fields
             "is_student": True,
             "type": "contact",
             "contact_type": "student",
-            "name": str(student[1]),
-            "email": str(student[2]),
-            "phone": student[3],
-            "city": str(student[4]),
+            "name": str(student[2]),
+            "email": str(student[3]),
+            "phone": student[4],
+            "city": str(student[5]),
+            "metabase_city": str(student[5]),
 
             "metabase_last_sync": fields.Datetime.now(),
             "metabase_sync_log_id": sync_log.id,
@@ -157,8 +158,8 @@ class ResPartner(models.Model):
 
             for student_data in data:
                 vals = self._prepare_student_vals(student_data, sync_log)
-                metabase_user_id = student_data[0]
-                student_contact_id = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
+                metabase_student_id = student_data[1]
+                student_contact_id = self.search([("metabase_student_id", "=", str(metabase_student_id))], limit=1)
                 
                 if student_contact_id:
                     student_contact_id.write(vals)
@@ -221,7 +222,7 @@ class ResPartner(models.Model):
                 "X-Metabase-Session": config.session_token
             }
             
-            # Prepare API endpoint URL with configurable settings
+            # Prepare Student API endpoint URL with configurable settings
             student_question = config.student_details_question_url
             if not student_question:
                 raise UserError("Student details question URL not configured")
@@ -256,8 +257,8 @@ class ResPartner(models.Model):
             updated_count = 0
 
             for student_data in data:
-                metabase_user_id = student_data[0]
-                if self.metabase_user_id == metabase_user_id:
+                metabase_student_id = student_data[1]
+                if self.metabase_student_id == metabase_student_id:
                     vals = self._prepare_student_vals(student_data, sync_log)
                     self.write(vals)
                     updated_count += 1

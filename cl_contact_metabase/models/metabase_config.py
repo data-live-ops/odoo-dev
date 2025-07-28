@@ -22,8 +22,8 @@ class MetabaseConfig(models.Model):
     email_notify = fields.Char(string='Notification Email', help='Email to notify when there are issues with the Metabase connection')
     
     # Question IDs for different data types
-    student_details_question_url = fields.Char(string='Student Details Question URL', default='https://metabase.dev.colearn.id/question/1032-odoo-student-details-live-class-db')
-    parent_details_question_url = fields.Char(string='Parent Details Question URL', default='https://metabase.dev.colearn.id/question/1033-odoo-student-details-parent')
+    student_details_question_url = fields.Char(string='Student Details Question URL', default='https://metabase.dev.colearn.id/question/1137-odoo-student-details-live-class-db-v2')
+    parent_details_question_url = fields.Char(string='Parent Details Question URL', default='https://metabase.dev.colearn.id/question/1138-odoo-student-details-parent-v2')
     student_lead_stage_question_url = fields.Char(string='Student Lead Stage Question URL', default='https://metabase.dev.colearn.id/question/1103-odoo-student-details-lead-stage')
     subscription_data_question_url = fields.Char(string='Subscription Data Question URL', default='https://metabase.dev.colearn.id/question/1026-odoo-student-details-subscription-data')
     payment_received_question_url = fields.Char(string='Payment Received Question URL', default='https://metabase.dev.colearn.id/question/1030-odoo-payment-payment-recieved')

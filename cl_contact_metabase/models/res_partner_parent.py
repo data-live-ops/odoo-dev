@@ -134,39 +134,41 @@ class ResPartner(models.Model):
             updated_count = 0
 
             for parent_data in data:
-                vals = self._prepare_parent_vals(parent_data, sync_log)
                 metabase_parent_id = parent_data[0]
-                metabase_user_id = parent_data[1]
+                metabase_student_id = parent_data[1]
                 
-                student_id = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
+                student_id = self.search([("metabase_student_id", "=", str(metabase_student_id))], limit=1)
                 # Skip if student not found
                 if not student_id:
-                    _logger.warning(f"Student with ID {metabase_user_id} not found, skipping parent import")
+                    _logger.warning(f"Student with ID {metabase_student_id} not found, skipping parent import")
                     continue
-                    
+                
+                vals = self._prepare_parent_vals(parent_data, sync_log)
+                if not vals['name']:
+                    vals['name'] = "Parent of " + student_id.name
                 parent_contact_id = self.search([("metabase_parent_id", "=", str(metabase_parent_id))], limit=1)
 
                 if parent_contact_id:
-                    if parent_contact_id.metabase_student_ids and metabase_user_id:
+                    if parent_contact_id.metabase_student_ids and metabase_student_id:
                         # Convert existing student_ids to a set to remove duplicates
                         existing_student_ids = set(parent_contact_id.metabase_student_ids.split(','))
                         # Add new student_id if it doesn't already exist
-                        new_id = metabase_user_id
+                        new_id = metabase_student_id
                         if new_id not in existing_student_ids:
                             existing_student_ids.add(new_id)
                         # Convert back to comma-separated string
                         vals['metabase_student_ids'] = ','.join(existing_student_ids)
-                    elif metabase_user_id:
-                        vals['metabase_student_ids'] = metabase_user_id
+                    elif metabase_student_id:
+                        vals['metabase_student_ids'] = metabase_student_id
 
                     parent_contact_id.write(vals)
                     updated_count += 1
                 else:
                     # Handle case when metabase_student_ids is False or empty
-                    if metabase_user_id:
+                    if metabase_student_id:
                         # For new records, just use the guardian_id directly
                         # No need to check for duplicates since it's a new record
-                        vals['metabase_student_ids'] = metabase_user_id
+                        vals['metabase_student_ids'] = metabase_student_id
                     # Create new parent
                     parent_contact_id = self.create(vals)
                     created_count += 1
