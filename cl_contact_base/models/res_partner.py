@@ -18,6 +18,7 @@ class ResPartner(models.Model):
     ])
     related_parent_id = fields.Many2one('res.partner')
     metabase_user_id = fields.Char(string="User ID", index=True)
+    metabase_student_id = fields.Char(string="Student ID", index=True)
     metabase_parent_id = fields.Char(string="Parent ID", index=True)
     metabase_grade = fields.Char(string="Grades")
     metabase_school = fields.Char(string="School Name")
