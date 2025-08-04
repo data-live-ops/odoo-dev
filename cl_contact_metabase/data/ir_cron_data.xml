@@ -12,14 +12,15 @@
             <field name="nextcall" eval="(DateTime.now().replace(hour=0, minute=5, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
         </record>
 
-        <record model="ir.actions.server" id="action_refresh_student_from_metabase">
+        <!-- <record model="ir.actions.server" id="action_refresh_student_from_metabase">
             <field name="name">Refresh Student FROM Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="model_res_partner"/>
             <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_student_from_metabase()</field>
-        </record>
+        </record> -->
 
         <record id="ir_cron_sync_metabase_parent" model="ir.cron">
             <field name="name">Sync Metabase Parent</field>
@@ -31,14 +32,15 @@
             <field name="interval_type">days</field>
             <field name="nextcall" eval="(DateTime.now().replace(hour=0, minute=15, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
         </record>
-        <record model="ir.actions.server" id="action_refresh_parent_from_metabase">
+        <!-- <record model="ir.actions.server" id="action_refresh_parent_from_metabase">
             <field name="name">Refresh Parent FROM Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="model_res_partner"/>
             <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_parent_from_metabase()</field>
-        </record>
+        </record> -->
         <record id="ir_cron_sync_metabase_lead_stage" model="ir.cron">
             <field name="name">Sync Metabase Lead Stage</field>
             <field name="model_id" ref="base.model_res_partner"/>
@@ -49,14 +51,15 @@
             <field name="interval_type">days</field>
             <field name="nextcall" eval="(DateTime.now().replace(hour=0, minute=30, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
         </record>
-        <record model="ir.actions.server" id="action_refresh_lead_stage_from_metabase">
+        <!-- <record model="ir.actions.server" id="action_refresh_lead_stage_from_metabase">
             <field name="name">Refresh Lead Stage FROM Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="model_res_partner"/>
             <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_lead_stage_from_metabase()</field>
-        </record>
+        </record> -->
         <record id="ir_cron_sync_metabase_subscription" model="ir.cron">
             <field name="name">Sync Metabase Subscription</field>
             <field name="model_id" ref="base.model_res_partner"/>
@@ -67,14 +70,15 @@
             <field name="interval_type">days</field>
             <field name="nextcall" eval="(DateTime.now().replace(hour=0, minute=45, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')" />
         </record>
-        <record model="ir.actions.server" id="action_refresh_subscription_from_metabase">
+        <!-- <record model="ir.actions.server" id="action_refresh_subscription_from_metabase">
             <field name="name">Refresh Subscription FROM Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="model_res_partner"/>
             <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_subscription_from_metabase()</field>
-        </record>
+        </record> -->
         
         <!-- Attendance Scheduled Action -->
         <record id="ir_cron_sync_metabase_attendance" model="ir.cron">
@@ -89,14 +93,15 @@
         </record>
         
         <!-- Attendance Server Action -->
-        <record model="ir.actions.server" id="action_refresh_attendance_from_metabase">
+        <!-- <record model="ir.actions.server" id="action_refresh_attendance_from_metabase">
             <field name="name">Refresh Attendance FROM Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="model_res_partner"/>
             <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_attendance_from_metabase()</field>
-        </record>
+        </record> -->
         
         <!-- Payment Received Scheduled Action -->
         <record id="ir_cron_sync_metabase_payment_received" model="ir.cron">
@@ -111,14 +116,15 @@
         </record>
         
         <!-- Payment Received Server Action -->
-        <record model="ir.actions.server" id="action_refresh_payment_received_from_metabase">
+        <!-- <record model="ir.actions.server" id="action_refresh_payment_received_from_metabase">
             <field name="name">Refresh Payment Received FROM Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="model_res_partner"/>
             <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_payment_received_from_metabase()</field>
-        </record>
+        </record> -->
         
         <!-- Payment Slot Selection Scheduled Action -->
         <record id="ir_cron_sync_metabase_payment_slot_selection" model="ir.cron">
@@ -133,14 +139,15 @@
         </record>
         
         <!-- Payment Slot Selection Server Action -->
-        <record model="ir.actions.server" id="action_refresh_payment_slot_selection_from_metabase">
+        <!-- <record model="ir.actions.server" id="action_refresh_payment_slot_selection_from_metabase">
             <field name="name">Refresh Payment Slot Selection FROM Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="model_res_partner"/>
             <field name="binding_model_id" ref="model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_payment_slot_selection_from_metabase()</field>
-        </record>
+        </record> -->
 
         <!-- Payment Paid Access Sync Scheduled Action -->
         <record id="ir_cron_sync_payment_paid_access" model="ir.cron">
@@ -155,13 +162,14 @@
         </record>
 
         <!-- Payment Paid Access Manual Sync Server Action -->
-        <record id="action_sync_payment_paid_access_from_metabase" model="ir.actions.server">
+        <!-- <record id="action_sync_payment_paid_access_from_metabase" model="ir.actions.server">
             <field name="name">Refresh Payment Paid Access from Metabase</field>
+            <field name="groups_id" eval="[(4, ref('base.group_no_one'))]"/>
             <field name="model_id" ref="base.model_res_partner"/>
             <field name="binding_model_id" ref="base.model_res_partner"/>
             <field name="binding_view_types">form,list</field>
             <field name="state">code</field>
             <field name="code">records.action_sync_payment_paid_access_from_metabase()</field>
-        </record>
+        </record> -->
     </data>
 </odoo>

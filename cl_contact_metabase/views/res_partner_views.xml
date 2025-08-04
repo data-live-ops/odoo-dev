@@ -6,6 +6,12 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <field name="is_student" invisible="1"/>
+                    <button name="action_contact_sync_now" string="Sync Now" type="object" class="oe_highlight" invisible="not is_student"/>
+                </header>
+            </xpath>
             <xpath expr="//group/group" position="inside">
                 <field name="is_student" invisible="not is_student" readonly="1"/>
                 <field name="is_parent" invisible="not is_parent" readonly="1"/>
