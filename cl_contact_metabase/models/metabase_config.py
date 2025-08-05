@@ -32,6 +32,14 @@ class MetabaseConfig(models.Model):
     attendance_main_question_url = fields.Char(string='Attendance Main Question URL', default='https://metabase.dev.colearn.id/question/1028-odoo-attendance-paid-class-joined')
     attendance_details_question_url = fields.Char(string='Attendance Details Question URL', default='https://metabase.dev.colearn.id/question/1027-odoo-attendance-paid-class-joined-class-details')
     
+    # New Student Question URL
+    new_student_details_question_url = fields.Char(string='New Student Details Question URL', default='https://metabase.dev.colearn.id/question/1139-odoo-student-details-live-class-db-v2-filtered-last-1-hour') 
+    new_subscription_data_question_url = fields.Char(string='New Subscription Data Question URL', default='https://metabase.dev.colearn.id/question/1141-odoo-subscription-filtered-last-1-hour')
+    new_parent_details_question_url = fields.Char(string='New Parent Details Question URL', default='https://metabase.dev.colearn.id/question/1140-odoo-student-details-parent-v2-filtered-last-1-hour')
+    new_payment_received_question_url = fields.Char(string='New Payment Received Question URL', default='https://metabase.dev.colearn.id/question/1142-odoo-payment-payment-recieved-filtered-last-1-hour')
+    new_payment_slot_selection_question_url = fields.Char(string='New Payment Slot Selection Question URL', default='https://metabase.dev.colearn.id/question/1144-odoo-payment-slot-selection-succeeded-filtered-last-1-hour')
+    new_payment_paid_access_question_url = fields.Char(string='New Payment Paid Access Question URL', default='https://metabase.dev.colearn.id/question/1143-odoo-payment-paid-access-paused-filtered-last-1-hour')
+
     # Retry Configuration
     max_retries = fields.Integer(
         string='Max Retries',
@@ -45,7 +53,8 @@ class MetabaseConfig(models.Model):
     )
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Configuration name must be unique!')
+        ('name_uniq', 'unique(name)', 'Configuration name must be unique!'),
+        ('unique_base_url', 'unique(base_url)', 'This base_url is already used on another user.'),
     ]
     
     def get_session_token(self):
@@ -165,6 +174,8 @@ class MetabaseConfig(models.Model):
             local_part = send_to_portcities.split('@')[0]
             name_part = local_part.replace('.', ' ').replace('_', ' ').replace('-', ' ')
             notify_name = ' '.join(word.capitalize() for word in name_part.split())
+            if len(send_to_portcities.split('@')) > 2:
+                notify_name = 'Administrator'
             
             # Prepare context with detailed error information
             from datetime import datetime
@@ -286,6 +297,18 @@ class MetabaseConfig(models.Model):
         question_id = self.get_question_id(self.student_lead_stage_question_url)
         return self.get_rows_only(question_id)
     
+    def get_new_student_details(self):
+        """Get new student details from Metabase"""
+        self.ensure_one()
+        question_id = self.get_question_id(self.new_student_details_question_url)
+        return self.get_rows_only(question_id)
+    
+    def get_new_parent_details(self):
+        """Get new parent details from Metabase"""
+        self.ensure_one()
+        question_id = self.get_question_id(self.new_parent_details_question_url)
+        return self.get_rows_only(question_id)
+    
     # Attendance Data Methods   
     def get_attendance_main(self):
         """Get attendance main data from Metabase"""
@@ -313,6 +336,12 @@ class MetabaseConfig(models.Model):
         question_id = self.get_question_id(self.subscription_data_question_url)
         return self.get_rows_only(question_id)
     
+    def get_new_subscription_data(self):
+        """Get new subscription data from Metabase"""
+        self.ensure_one()
+        question_id = self.get_question_id(self.new_subscription_data_question_url)
+        return self.get_rows_only(question_id)
+    
     # Payment Data Methods
     def get_slot_selection_succeeded(self):
         """Get data for successful slot selections from Metabase"""
@@ -330,6 +359,24 @@ class MetabaseConfig(models.Model):
         """Get data for paid access that has been paused from Metabase"""
         self.ensure_one()
         question_id = self.get_question_id(self.payment_paid_access_question_url)
+        return self.get_rows_only(question_id)
+    
+    def get_new_slot_selection_succeeded(self):
+        """Get data for successful new slot selections from Metabase"""
+        self.ensure_one()
+        question_id = self.get_question_id(self.new_payment_slot_selection_question_url)
+        return self.get_rows_only(question_id)
+    
+    def get_new_payment_received(self):
+        """Get data for new payments received from Metabase"""
+        self.ensure_one()
+        question_id = self.get_question_id(self.new_payment_received_question_url)
+        return self.get_rows_only(question_id)
+    
+    def get_new_paid_access_paused(self):
+        """Get data for new paid access that has been paused from Metabase"""
+        self.ensure_one()
+        question_id = self.get_question_id(self.new_payment_paid_access_question_url)
         return self.get_rows_only(question_id)
 
     def action_show_student_details(self):
@@ -601,5 +648,70 @@ class MetabaseConfig(models.Model):
                     "message": _("Payment paid access synchronization failed. Please check the logs for details."),
                     "sticky": True,
                     "type": "danger",
+                }
+            }
+    
+    def run_action_sync_new_records_from_metabase(self):
+        config = self.env['metabase.config'].search([], limit=1)
+        config.with_delay(priority=20, eta=10).action_sync_new_records()
+
+    def action_sync_new_records_from_metabase(self):
+        self.ensure_one()
+        self.with_delay(priority=20, eta=10).action_sync_new_records()
+    
+    def action_sync_new_records(self):
+        """Manually run the new records synchronization"""
+        self.ensure_one()
+        new_students = new_parents = new_subscription = new_payment_received_data = new_paid_access_paused_data = new_slot_selection_succeeded_data = False
+        new_student_details = self.get_new_student_details()
+        if new_student_details:
+            _logger.info("New student details received from Metabase")
+            new_students = self.env['res.partner'].with_delay(priority=20, eta=15)._sync_new_students()
+        
+        new_parent_details = self.get_new_parent_details()
+        if new_parent_details:
+            _logger.info("New parent details received from Metabase")
+            new_parents = self.env['res.partner'].with_delay(priority=20, eta=20)._sync_new_parents()
+        
+        new_subscription_data = self.get_new_subscription_data()
+        if new_subscription_data:
+            _logger.info("New subscription data received from Metabase")
+            new_subscription = self.env['res.partner'].with_delay(priority=20, eta=25)._sync_new_student_subscriptions()
+        
+        new_payment_received = self.get_new_payment_received()
+        if new_payment_received:
+            _logger.info("New payment received received from Metabase")
+            new_payment_received_data = self.env['res.partner'].with_delay(priority=20, eta=30)._sync_new_payment_received()
+        
+        new_paid_access_paused = self.get_new_paid_access_paused()
+        if new_paid_access_paused:
+            _logger.info("New paid access paused received from Metabase")
+            new_paid_access_paused_data = self.env['res.partner'].with_delay(priority=20, eta=35)._sync_new_payment_paid_access()
+        
+        new_slot_selection_succeeded = self.get_new_slot_selection_succeeded()
+        if new_slot_selection_succeeded:
+            _logger.info("New slot selection succeeded received from Metabase")
+            new_slot_selection_succeeded_data = self.env['res.partner'].with_delay(priority=20, eta=40)._sync_new_payment_slot_selection()
+        
+        if new_students or new_parents or new_subscription or new_payment_received_data or new_paid_access_paused_data or new_slot_selection_succeeded_data:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Success'),
+                    'message': _('New records synchronization completed successfully.'),
+                    'sticky': False,
+                    'type': 'success',
+                }
+            }
+        else:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Error'),
+                    'message': _('New records synchronization failed. Due to some data not found in Metabase.'),
+                    'sticky': True,
+                    'type': 'danger',
                 }
             }
