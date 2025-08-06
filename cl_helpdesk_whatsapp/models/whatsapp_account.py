@@ -63,16 +63,20 @@ class WhatsAppAccount(models.Model):
             if not message_body or\
                     message_body.strip() != trigger_message:
                 return None  # Only trigger on exact message
-        
+
+        phone_number = '+' + sender_mobile
         # Search for partner by phone or mobile
         partner = self.env['res.partner'].search([
-            ('mobile', '=', sender_mobile)
+            ('mobile', '=', sender_mobile),
+        ], limit=1)
+        partner_formatted = self.env['res.partner'].search([
+            ('mobile', '=', phone_number),
         ], limit=1)
 
         # Check for existing open ticket for this partner or phone
         open_ticket_domain = [('stage_id.is_closed_stage', '=', False)]
-        if partner:
-            open_ticket_domain += [('partner_id', '=', partner.id)]
+        if partner or partner_formatted:
+            open_ticket_domain += [('partner_id', '=', partner.id or partner_formatted.id)]
         else:
             open_ticket_domain += [('partner_phone', '=', sender_mobile)]
         open_ticket = self.env['helpdesk.ticket'].search(
@@ -93,7 +97,7 @@ class WhatsAppAccount(models.Model):
         }
         if partner:
             ticket_vals['partner_id'] = partner.id
-            ticket_vals['partner_phone'] = partner.mobile
+            ticket_vals['partner_phone'] = partner.phone
         else:
             # Save phone in description if no partner found
             ticket_vals['partner_phone'] = sender_mobile
