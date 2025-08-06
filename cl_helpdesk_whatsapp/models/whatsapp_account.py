@@ -75,8 +75,10 @@ class WhatsAppAccount(models.Model):
 
         # Check for existing open ticket for this partner or phone
         open_ticket_domain = [('stage_id.is_closed_stage', '=', False)]
-        if partner or partner_formatted:
-            open_ticket_domain += [('partner_id', '=', partner.id or partner_formatted.id)]
+        if partner:
+            open_ticket_domain += [('partner_id', '=', partner.id)]
+        elif partner_formatted:
+            open_ticket_domain += [('partner_id', '=', partner_formatted.id)]
         else:
             open_ticket_domain += [('partner_phone', '=', sender_mobile)]
         open_ticket = self.env['helpdesk.ticket'].search(
