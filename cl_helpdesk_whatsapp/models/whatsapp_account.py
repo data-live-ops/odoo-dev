@@ -63,11 +63,10 @@ class WhatsAppAccount(models.Model):
             if not message_body or\
                     message_body.strip() != trigger_message:
                 return None  # Only trigger on exact message
-
-        phone_number = '+' + sender_mobile
+        
         # Search for partner by phone or mobile
         partner = self.env['res.partner'].search([
-            ('mobile', '=', phone_number)
+            ('mobile', '=', sender_mobile)
         ], limit=1)
 
         # Check for existing open ticket for this partner or phone

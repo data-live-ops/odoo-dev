@@ -4,3 +4,4 @@ from . import whatsapp_template
 from . import whatsapp_message
 from . import whatsapp_account
 from . import helpdesk_stage
+from . import res_partner
