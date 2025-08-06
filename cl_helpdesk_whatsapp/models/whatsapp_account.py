@@ -100,6 +100,9 @@ class WhatsAppAccount(models.Model):
         if partner:
             ticket_vals['partner_id'] = partner.id
             ticket_vals['partner_phone'] = partner.phone
+        elif partner_formatted:
+            ticket_vals['partner_id'] = partner_formatted.id
+            ticket_vals['partner_phone'] = partner_formatted.phone
         else:
             # Save phone in description if no partner found
             ticket_vals['partner_phone'] = sender_mobile
