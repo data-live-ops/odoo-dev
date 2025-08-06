@@ -171,5 +171,15 @@
             <field name="state">code</field>
             <field name="code">records.action_sync_payment_paid_access_from_metabase()</field>
         </record> -->
+
+        <record id="ir_cron_sync_new_records" model="ir.cron">
+            <field name="name">Sync New Records from Metabase</field>
+            <field name="model_id" ref="model_metabase_config"/>
+            <field name="state">code</field>
+            <field name="code">model.run_action_sync_new_records_from_metabase()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+        </record>
     </data>
 </odoo>

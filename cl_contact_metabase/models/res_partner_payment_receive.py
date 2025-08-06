@@ -54,6 +54,40 @@ class ResPartner(models.Model):
         return False
     
     @api.model
+    def _sync_new_payment_received_with_retry(self):
+        """Scheduled function to sync new payment received data from Metabase with retry mechanism"""
+        # Get configuration
+        config = self.env["metabase.config"].search([("active", "=", True)], limit=1)
+        if not config:
+            _logger.error("No active Metabase configuration found")
+            return False
+            
+        # Get retry settings
+        max_retries = config.max_retries if config.max_retries > 0 else 3
+        retry_delay = config.retry_delay if config.retry_delay > 0 else 5  # minutes
+        
+        # Try to sync
+        retry_count = 0
+        last_error = None
+        
+        while retry_count <= max_retries:
+            if retry_count > 0:
+                _logger.info(f"Retry attempt {retry_count}/{max_retries} for Metabase payment received sync")
+                # Wait before retrying
+                time.sleep(retry_delay * 60)  # Convert minutes to seconds
+                
+            success = self._sync_new_payment_received()
+            if success:
+                if retry_count > 0:
+                    _logger.info(f"Metabase new payment received sync succeeded after {retry_count} retries")
+                return True
+                
+            retry_count += 1
+            
+        _logger.error(f"Metabase new payment received sync failed after {max_retries} retries")
+        return False
+    
+    @api.model
     def _prepare_payment_received_vals(self, payment_data, sync_log):
         """Helper method to prepare payment received values from Metabase data"""                
         return {
@@ -190,6 +224,129 @@ class ResPartner(models.Model):
                 )
                 sync_log.action_notify()
             _logger.error("Payment received sync failed: %s", str(e))
+            return False
+    
+    @api.model
+    def _sync_new_payment_received(self):
+        """Function to sync new payment received data from Metabase"""
+        sync_log = False
+
+        try:
+            sync_vals = {
+                    "state": "processing",
+                    "data_type": "payment_received",
+                    "start_date": fields.Datetime.now(),
+                }
+            
+            if self.env.context.get("from_manual_sync"):
+                sync_vals.update({
+                    "sync_type": "manual",
+                })
+            
+            # Get configuration
+            config = self.env["metabase.config"].search(
+                [("active", "=", True)], limit=1
+            )
+            if not config:
+                raise UserError("No active Metabase configuration found")
+            
+            # Get token
+            if not config.check_session():
+                raise UserError("Failed to get valid session token")
+            headers = {
+                "X-Metabase-Session": config.session_token
+            }
+            
+            # Prepare Payment Received API endpoint URL with configurable settings
+            payment_question = config.new_payment_received_question_url
+            if not payment_question:
+                raise UserError("New Payment received question URL not configured")
+            
+            question_id = config.get_question_id(payment_question)
+            
+            # First get the question details
+            card_response = requests.get(
+                f"{config.base_url.rstrip('/')}/api/card/{question_id}",
+                headers=headers
+            )
+            
+            if card_response.status_code != 200:
+                raise UserError(f"Error getting question details: {card_response.text}")
+            
+            # Then get the results
+            results_response = requests.post(
+                f"{config.base_url.rstrip('/')}/api/card/{question_id}/query",
+                headers=headers
+            )
+            
+            if not results_response.status_code == 202:
+                raise UserError(f"Error getting question results: {results_response.text}")
+            
+            data = []
+            results = results_response.json()
+            if results and 'data' in results and 'rows' in results['data']:
+                data = results['data']['rows']
+
+            sync_vals.update({
+                'raw_response': results,
+            })
+            created_count = 0
+            updated_count = 0
+            if not data:
+                _logger.info("No data new payment received from Metabase")
+                return False
+
+            sync_log = self.env["metabase.sync.log"].create(sync_vals)
+            for payment_data in data:
+                metabase_user_id = payment_data[0]
+                invoice_id = payment_data[4]  # Assuming invoice_id is at index 4
+                
+                # Find the student contact
+                student_contact = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
+                
+                if student_contact:
+                    # Prepare payment received values
+                    vals = self._prepare_payment_received_vals(payment_data, sync_log)
+                    
+                    # Check if payment record already exists
+                    existing_payment = self.env['res.partner.payment.recieved'].search([
+                        ('invoice_id', '=', invoice_id),
+                        ('student_id', '=', student_contact.id)
+                    ], limit=1)
+                    
+                    if existing_payment:
+                        # Update existing payment record
+                        existing_payment.write(vals)
+                        updated_count += 1
+                    else:
+                        # Create new payment record
+                        vals['student_id'] = student_contact.id
+                        self.env['res.partner.payment.recieved'].create(vals)
+                        created_count += 1
+
+            sync_log.write(
+                {
+                    "state": "done",
+                    "end_date": fields.Datetime.now(),
+                    "total_records": len(data),
+                    "created_count": created_count,
+                    "updated_count": updated_count,
+                }
+            )
+            _logger.info("New Payment received sync completed successfully")
+            return True
+
+        except Exception as e:
+            if sync_log:
+                sync_log.write(
+                    {
+                        "state": "failed",
+                        "end_date": fields.Datetime.now(),
+                        "error_message": str(e),
+                    }
+                )
+                sync_log.action_notify()
+            _logger.error("New Payment received sync failed: %s", str(e))
             return False
     
     def action_sync_payment_received_from_metabase(self):
