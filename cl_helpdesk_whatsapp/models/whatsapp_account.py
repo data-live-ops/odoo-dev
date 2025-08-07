@@ -72,7 +72,6 @@ class WhatsAppAccount(models.Model):
         partner_formatted = self.env['res.partner'].search([
             ('mobile', '=', phone_number),
         ], limit=1)
-
         # Check for existing open ticket for this partner or phone
         open_ticket_domain = [('stage_id.is_closed_stage', '=', False)]
         if partner:
@@ -98,12 +97,22 @@ class WhatsAppAccount(models.Model):
             'channel': 'whatsapp',
         }
         if partner:
+            _logger.info(
+                "Partner found: %s %s %s",
+                partner.name, partner.mobile, partner.phone
+            )
             ticket_vals['partner_id'] = partner.id
-            ticket_vals['partner_phone'] = partner.phone
+            ticket_vals['partner_phone'] = partner.phone or partner.mobile
         elif partner_formatted:
+            _logger.info(
+                "Partner formatted found: %s %s %s",
+                partner_formatted.name, partner_formatted.mobile, partner_formatted.phone
+            )
             ticket_vals['partner_id'] = partner_formatted.id
-            ticket_vals['partner_phone'] = partner_formatted.phone
+            ticket_vals['partner_phone'] = partner_formatted.phone or\
+                partner_formatted.mobile
         else:
+            _logger.info("Partner not found")
             # Save phone in description if no partner found
             ticket_vals['partner_phone'] = sender_mobile
         ticket_vals['description'] += f"\nPhone: {sender_mobile}"
