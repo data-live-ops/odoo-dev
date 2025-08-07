@@ -217,7 +217,9 @@
                         </form>
                     </field>
                 </page>
-                <page name="sync_log" string="Sync Log" invisible="not is_student and not is_parent">
+            </xpath>
+            <xpath expr="//page[@name='attendance']" position="after">
+                <page name="sync_log" string="Sync Log">
                     <field name="metabase_sync_log_ids" mode="list" readonly="1">
                         <list default_order="name asc">
                             <field name="name"/>

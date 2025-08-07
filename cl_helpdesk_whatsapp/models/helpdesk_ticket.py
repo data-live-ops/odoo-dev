@@ -18,11 +18,8 @@ class HelpdeskTicket(models.Model):
     )
     email_cc = fields.Char()
     student_phase = fields.Selection(
-        selection=[
-            ('paid_student', 'Paid Student'),
-            ('new_student', 'New Student'),
-            ('non_paid_student', 'Non Paid Student'),
-        ],
+        related='partner_id.metabase_student_phase',
+        store=True,
     )
     initiated_by = fields.Selection(
         selection=[
@@ -77,3 +74,23 @@ class HelpdeskTicket(models.Model):
                 model_description=model_description,
             )
         return ticket
+
+    def assign_user_based_on_student_phase(self):
+        """ Check student phase and assign agent based on it """
+        if self.partner_id and self.partner_id.metabase_student_phase:
+            team_id = False
+            if self.partner_id.metabase_student_phase == 'new':
+                team_id = self.env['helpdesk.team'].search([
+                    ('new_student', '=', True)
+                ], limit=1)
+            elif self.partner_id.metabase_student_phase == 'paid':
+                team_id = self.env['helpdesk.team'].search([
+                    ('paid_student', '=', True)
+                ], limit=1)
+            else:
+                team_id = self.env['helpdesk.team'].search([
+                    ('non_paid_student', '=', True)
+                ], limit=1)
+            if team_id:
+                self.team_id = team_id
+                self.user_id = team_id._determine_user_to_assign()[team_id.id]

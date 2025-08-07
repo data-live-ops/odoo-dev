@@ -118,6 +118,7 @@ class WhatsAppAccount(models.Model):
         ticket_vals['description'] += f"\nPhone: {sender_mobile}"
 
         ticket = self.env['helpdesk.ticket'].create(ticket_vals)
+        ticket.assign_user_based_on_student_phase()
         return ticket
 
     def _process_autoreplies(self, value):
