@@ -11,6 +11,7 @@
     'depends': [
         'helpdesk',
         'whatsapp',
+        'cl_contact_base',
     ],
     'data': [
         'views/helpdesk_team_views.xml',
