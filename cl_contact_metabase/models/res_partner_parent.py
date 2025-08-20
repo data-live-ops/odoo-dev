@@ -227,7 +227,7 @@ class ResPartner(models.Model):
                         "error_message": "No parents matched with student records",
                     }
                 )
-                sync_log.action_notify()
+                # sync_log.action_notify()
                 return False
 
             _logger.info(f"Parent sync completed successfully: {created_count} created, {updated_count} updated")
@@ -377,7 +377,7 @@ class ResPartner(models.Model):
                         "error_message": "No new parents matched with student records",
                     }
                 )
-                sync_log.action_notify()
+                # sync_log.action_notify()
                 return False
 
             _logger.info(f"New parent sync completed successfully: {created_count} created, {updated_count} updated")

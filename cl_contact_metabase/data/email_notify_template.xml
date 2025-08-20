@@ -5,7 +5,7 @@
             <field name="name">Metabase Integration Failed</field>
             <field name="model_id" ref="cl_contact_metabase.model_metabase_config"/>
             <field name="subject">Metabase Integration Alert: {{ ctx.get('subject_detail', 'Sync Process Failed') }}</field>
-            <field name="email_from">"Lincoln School" &lt;noreply@lincolnschool.edu.np&gt;</field>
+            <field name="email_from">"Colearn" &lt;info@colearn.id&gt;</field>
             <field name="email_to">{{ object.email_notify }}</field>
             <field name="description">Metabase Integration Failed</field>
             <field name="body_html" type="html">
@@ -37,7 +37,7 @@
                         
                         <p>Please take appropriate action to resolve this issue. If you need assistance, please contact your system administrator.</p>
                         
-                        <p>Thank you,<br/>Lincoln School System</p>
+                        <p>Thank you,<br/>Colearn</p>
                     </div>
                     
                     <div style="background-color: #f2f2f2; padding: 10px; font-size: 12px; color: #777; text-align: center;">
