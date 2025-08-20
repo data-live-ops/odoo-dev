@@ -19,7 +19,8 @@ class ResPartner(models.Model):
 
             record.with_delay().action_sync_manual_student()
             record.with_delay().action_sync_manual_lead_stage()
-            record.student_parent_ids.with_delay().action_sync_parent_from_metabase()
+            if record.student_parent_ids:
+                record.student_parent_ids.with_delay().action_sync_parent_from_metabase()
             record.with_delay().action_sync_student_subscription_from_metabase()
             record.with_delay().action_sync_attendance_from_metabase()
             record.with_delay().action_sync_payment_received_from_metabase()
