@@ -31,6 +31,7 @@ class ResPartnerAttendanceMain(models.Model):
         string="Class Teacher",
         readonly=True,
     )
+    class_start_time = fields.Char(readonly=True)
 
 class ResPartnerAttendanceDetail(models.Model):
     """ New model for res.partner attendance detail """
@@ -38,7 +39,7 @@ class ResPartnerAttendanceDetail(models.Model):
     _name = 'res.partner.attendance.detail'
     _description = 'Attendance Detail'
 
-    attendance_main_id = fields.Many2one('res.partner.attendance.main')
+    attendance_main_id = fields.Many2one('res.partner.attendance.main', index=True)
     live_class_id = fields.Char(
         string="Class ID",
         readonly=True,

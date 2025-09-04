@@ -377,6 +377,16 @@ class ResPartner(models.Model):
                         vals['attendance_main_id'] = attendance_main.id
                         self.env['res.partner.attendance.detail'].create(vals)
                         created_count += 1
+                    
+                    # set field class_topic, class_subject, teacher_name, class_start_time in attendance main
+                    attendance_main.write(
+                        {
+                            "class_topic": str(attendance_data[1]) if attendance_data[1] else False,
+                            "class_subject": str(attendance_data[2]) if attendance_data[2] else False,
+                            "class_start_time": str(attendance_data[3]) if attendance_data[3] else False,
+                            "teacher_name": str(attendance_data[4]) if attendance_data[4] else False,
+                        }
+                    )
 
             sync_log.write(
                 {
