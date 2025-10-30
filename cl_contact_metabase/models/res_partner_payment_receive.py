@@ -125,92 +125,118 @@ class ResPartner(models.Model):
                 sync_log.write({
                     "sync_type": "manual",
                 })
-            
+
             # Get configuration
             config = self.env["metabase.config"].search(
                 [("active", "=", True)], limit=1
             )
             if not config:
                 raise UserError("No active Metabase configuration found")
-            
-            # Get token
-            if not config.check_session():
-                raise UserError("Failed to get valid session token")
-            headers = {
-                "X-Metabase-Session": config.session_token
-            }
-            
-            # Prepare Payment Received API endpoint URL with configurable settings
-            payment_question = config.payment_received_question_url
-            if not payment_question:
-                raise UserError("Payment received question URL not configured")
-            
-            question_id = config.get_question_id(payment_question)
-            
-            # First get the question details
-            card_response = requests.get(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}",
-                headers=headers
-            )
-            
-            if card_response.status_code != 200:
-                raise UserError(f"Error getting question details: {card_response.text}")
-            
-            # Then get the results
-            results_response = requests.post(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}/query",
-                headers=headers
-            )
-            
-            if not results_response.status_code == 202:
-                raise UserError(f"Error getting question results: {results_response.text}")
-            
-            data = []
-            results = results_response.json()
-            if results and 'data' in results and 'rows' in results['data']:
-                data = results['data']['rows']
 
-            sync_log.raw_response = results
+            # Get payment received data from Metabase (using config method with max_results support)
+            _logger.info("Fetching payment received details from Metabase...")
+            data = config.get_payment_received()
+
+            if not data:
+                raise UserError("No data received from Metabase")
+
+            # Store raw response for debugging (don't store all data to save space)
+            total_records = len(data)
+            sync_log.raw_response = {"data": {"rows": []}, "row_count": total_records}
+
             created_count = 0
             updated_count = 0
+            skipped_count = 0
 
-            for payment_data in data:
-                metabase_user_id = payment_data[0]
-                invoice_id = payment_data[4]  # Assuming invoice_id is at index 4
-                
-                # Find the student contact
-                student_contact = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
-                
-                if student_contact:
-                    # Prepare payment received values
-                    vals = self._prepare_payment_received_vals(payment_data, sync_log)
-                    
-                    # Check if payment record already exists
-                    existing_payment = self.env['res.partner.payment.recieved'].search([
-                        ('invoice_id', '=', invoice_id),
-                        ('student_id', '=', student_contact.id)
-                    ], limit=1)
-                    
-                    if existing_payment:
-                        # Update existing payment record
-                        existing_payment.write(vals)
-                        updated_count += 1
-                    else:
-                        # Create new payment record
-                        vals['student_id'] = student_contact.id
-                        self.env['res.partner.payment.recieved'].create(vals)
-                        created_count += 1
+            # Process in batches to avoid timeout for large datasets
+            batch_size = 1000
+            total_batches = (total_records + batch_size - 1) // batch_size
+
+            _logger.info(f"Processing {total_records} records in {total_batches} batches of {batch_size}")
+
+            for batch_num in range(total_batches):
+                start_idx = batch_num * batch_size
+                end_idx = min(start_idx + batch_size, total_records)
+                batch_data = data[start_idx:end_idx]
+
+                batch_created = 0
+                batch_updated = 0
+                batch_skipped = 0
+
+                for payment_data in batch_data:
+                    try:
+                        metabase_user_id = payment_data[0]
+                        invoice_id = payment_data[4]  # Assuming invoice_id is at index 4
+
+                        # Find the student contact
+                        student_contact = self.search([("metabase_user_id", "=", str(metabase_user_id))], limit=1)
+
+                        if student_contact:
+                            # Prepare payment received values
+                            vals = self._prepare_payment_received_vals(payment_data, sync_log)
+
+                            # Check if payment record already exists
+                            existing_payment = self.env['res.partner.payment.recieved'].search([
+                                ('invoice_id', '=', invoice_id),
+                                ('student_id', '=', student_contact.id)
+                            ], limit=1)
+
+                            if existing_payment:
+                                # Update existing payment record
+                                existing_payment.write(vals)
+                                batch_updated += 1
+                            else:
+                                # Create new payment record
+                                vals['student_id'] = student_contact.id
+                                self.env['res.partner.payment.recieved'].create(vals)
+                                batch_created += 1
+                        else:
+                            batch_skipped += 1
+                    except Exception as e:
+                        _logger.warning(f"Error processing payment received for invoice {invoice_id}: {str(e)}")
+                        batch_skipped += 1
+                        continue
+
+                created_count += batch_created
+                updated_count += batch_updated
+                skipped_count += batch_skipped
+
+                # Commit after each batch to save progress
+                self.env.cr.commit()
+
+                # Log progress
+                progress_pct = ((batch_num + 1) / total_batches) * 100
+                _logger.info(
+                    f"Batch {batch_num + 1}/{total_batches} ({progress_pct:.1f}%): "
+                    f"Created {batch_created}, Updated {batch_updated}, Skipped {batch_skipped}. "
+                    f"Total so far: {created_count} created, {updated_count} updated, {skipped_count} skipped"
+                )
+
+                # Update sync log progress periodically (every 10 batches)
+                if (batch_num + 1) % 10 == 0 or (batch_num + 1) == total_batches:
+                    sync_log.write({
+                        "created_count": created_count,
+                        "updated_count": updated_count,
+                        "skipped_count": skipped_count,
+                    })
+                    self.env.cr.commit()
 
             sync_log.write(
                 {
                     "state": "done",
                     "end_date": fields.Datetime.now(),
-                    "total_records": len(data),
+                    "total_records": total_records,
                     "created_count": created_count,
                     "updated_count": updated_count,
+                    "skipped_count": skipped_count,
                 }
             )
-            _logger.info("Payment received sync completed successfully")
+            self.env.cr.commit()
+
+            _logger.info(
+                f"Payment received sync completed successfully. Created: {created_count}, "
+                f"Updated: {updated_count}, Skipped: {skipped_count}"
+            )
             return True
 
         except Exception as e:

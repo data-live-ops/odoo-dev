@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: odoo_postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: CHANGE_ME  # Change this password!
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  odoo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: odoo_app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+      - "8072:8072"
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=CHANGE_ME  # Change this password!
+    volumes:
+      # Mount custom addons
+      - ./:/mnt/custom-addons
+      # Mount enterprise addons (update path to your enterprise folder)
+      - /path/to/your/enterprise/addons:/mnt/enterprise-addons:ro
+      # Odoo data
+      - odoo-web-data:/var/lib/odoo
+      # Config
+      - ./odoo.conf:/etc/odoo/odoo.conf:ro
+    restart: unless-stopped
+    command: odoo --config=/etc/odoo/odoo.conf --dev=all
+
+volumes:
+  odoo-db-data:
+    name: odoo_postgres_data
+  odoo-web-data:
+    name: odoo_web_data

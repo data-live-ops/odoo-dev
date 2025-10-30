@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+.gitlab-ci.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# Odoo
+*.log
+filestore/
+sessions/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+SETUP.md
+*.md
+
+# Scripts
+odoo-dev.sh
+setup-brew.sh

@@ -178,3 +178,34 @@ build/
 config/odoo.local.conf
 
 codeclimate.json
+
+# ===== Odoo Specific =====
+# Configuration files with credentials
+odoo.conf
+*.conf
+!*.conf.example
+
+# Docker compose with credentials
+docker-compose.yml
+!docker-compose.example.yml
+
+# Enterprise addons (symlink to proprietary code)
+addons
+addons/
+
+# Environment files
+*.env
+!.env.example
+
+# Odoo session/filestore
+filestore/
+sessions/
+
+# Database dumps
+*.sql
+*.dump
+*.backup
+
+# Odoo logs
+odoo.log
+*.log
