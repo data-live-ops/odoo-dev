@@ -38,8 +38,15 @@ echo "🚀 Starting Odoo on Railway..."
 echo "📊 Database: ${DB_HOST}:${DB_PORT}/${ODOO_DB_NAME}"
 echo "📦 Custom Addons Path: /mnt/custom-addons"
 
+# Create Odoo configuration file with admin password
+cat > /tmp/odoo.conf <<EOF
+[options]
+admin_passwd = ${ADMIN_PASSWORD}
+EOF
+
 # Start Odoo with environment-based configuration
 exec odoo \
+    --config=/tmp/odoo.conf \
     --addons-path="${ADDONS_PATH}" \
     --db_host="${DB_HOST}" \
     --db_port="${DB_PORT}" \
@@ -55,6 +62,5 @@ exec odoo \
     --limit-time-real="${LIMIT_TIME_REAL}" \
     --without-demo=all \
     --log-level=info \
-    --admin-password="${ADMIN_PASSWD}" \
     --server-wide-modules=base,web,queue_job \
     "$@"
