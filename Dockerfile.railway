@@ -23,6 +23,9 @@ COPY --chown=odoo:odoo . /mnt/custom-addons/
 # Copy enterprise modules to container
 COPY --chown=odoo:odoo enterprise /mnt/enterprise-addons/
 
+# Remove enterprise folder from custom-addons (avoid duplicate)
+RUN rm -rf /mnt/custom-addons/enterprise
+
 # Fix permissions
 RUN chown -R odoo:odoo /mnt/custom-addons /mnt/enterprise-addons
 
