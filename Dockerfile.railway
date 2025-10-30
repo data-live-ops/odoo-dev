@@ -33,4 +33,4 @@ EXPOSE 8069 8072
 
 # Use our custom entrypoint
 ENTRYPOINT ["/docker-entrypoint-railway.sh"]
-CMD ["odoo"]
+# No CMD needed - script calls odoo directly
