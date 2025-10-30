@@ -75,7 +75,6 @@ class MetabaseConfig(models.Model):
         default="https://metabase.dev.colearn.id/question/1027-odoo-attendance-paid-class-joined-class-details",
     )
 
-    # New Student Question URL
     new_student_details_question_url = fields.Char(
         string="New Student Details Question URL",
         default="https://metabase.dev.colearn.id/question/1139-odoo-student-details-live-class-db-v2-filtered-last-1-hour",
