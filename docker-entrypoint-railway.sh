@@ -43,6 +43,7 @@ cat > /tmp/odoo.conf <<EOF
 [options]
 admin_passwd = ${ADMIN_PASSWORD}
 server_wide_modules = base,web,queue_job
+db_user_has_superuser_privileges = True
 EOF
 
 # Start Odoo with environment-based configuration
