@@ -4,6 +4,11 @@ FROM odoo:18.0
 # Switch to root to install additional packages
 USER root
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install additional Python dependencies
 RUN python3 -m pip install --no-cache-dir --break-system-packages \
     phonenumbers \

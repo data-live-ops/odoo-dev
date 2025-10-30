@@ -38,12 +38,36 @@ echo "🚀 Starting Odoo on Railway..."
 echo "📊 Database: ${DB_HOST}:${DB_PORT}/${ODOO_DB_NAME}"
 echo "📦 Custom Addons Path: /mnt/custom-addons"
 
+# Create dedicated Odoo user if we're using 'postgres' superuser
+if [ "${DB_USER}" = "postgres" ]; then
+    echo "⚠️  Detected 'postgres' user, creating dedicated 'odoo_app' user..."
+
+    # Check if odoo_app user exists, create if not
+    USER_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -tAc \
+        "SELECT 1 FROM pg_roles WHERE rolname='odoo_app'" 2>/dev/null || echo "")
+
+    if [ -z "$USER_EXISTS" ]; then
+        echo "📝 Creating odoo_app user..."
+        PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" <<-EOSQL
+			CREATE USER odoo_app WITH PASSWORD '${DB_PASSWORD}';
+			GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO odoo_app;
+			ALTER DATABASE ${DB_NAME} OWNER TO odoo_app;
+		EOSQL
+        echo "✅ Created odoo_app user"
+    else
+        echo "✅ odoo_app user already exists"
+    fi
+
+    # Use the new user
+    DB_USER="odoo_app"
+    echo "🔄 Switching to odoo_app user for Odoo"
+fi
+
 # Create Odoo configuration file with admin password and server-wide modules
 cat > /tmp/odoo.conf <<EOF
 [options]
 admin_passwd = ${ADMIN_PASSWORD}
 server_wide_modules = base,web,queue_job
-db_user_has_superuser_privileges = True
 EOF
 
 # Start Odoo with environment-based configuration
@@ -64,4 +88,5 @@ exec odoo \
     --limit-time-real="${LIMIT_TIME_REAL}" \
     --without-demo=all \
     --log-level=info \
+    --no-database-list \
     "$@"
