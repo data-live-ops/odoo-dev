@@ -14,14 +14,17 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages \
     phonenumbers \
     geoip2
 
-# Create directories for custom addons
-RUN mkdir -p /mnt/custom-addons
+# Create directories for custom addons and enterprise
+RUN mkdir -p /mnt/custom-addons /mnt/enterprise-addons
 
 # Copy custom modules to container
 COPY --chown=odoo:odoo . /mnt/custom-addons/
 
+# Copy enterprise modules to container
+COPY --chown=odoo:odoo enterprise /mnt/enterprise-addons/
+
 # Fix permissions
-RUN chown -R odoo:odoo /mnt/custom-addons
+RUN chown -R odoo:odoo /mnt/custom-addons /mnt/enterprise-addons
 
 # Create entrypoint script
 COPY --chown=odoo:odoo docker-entrypoint-railway.sh /

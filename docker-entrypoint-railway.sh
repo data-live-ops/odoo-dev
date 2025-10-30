@@ -31,12 +31,12 @@ MAX_CRON_THREADS="${MAX_CRON_THREADS:-2}"
 LIMIT_TIME_CPU="${LIMIT_TIME_CPU:-600}"
 LIMIT_TIME_REAL="${LIMIT_TIME_REAL:-1200}"
 
-# Addons path - custom modules only (no enterprise in Railway)
-ADDONS_PATH="/usr/lib/python3/dist-packages/odoo/addons,/mnt/custom-addons"
+# Addons path - includes base, custom, and enterprise modules
+ADDONS_PATH="/usr/lib/python3/dist-packages/odoo/addons,/mnt/enterprise-addons,/mnt/custom-addons"
 
 echo "🚀 Starting Odoo on Railway..."
 echo "📊 Database: ${DB_HOST}:${DB_PORT}/${ODOO_DB_NAME}"
-echo "📦 Custom Addons Path: /mnt/custom-addons"
+echo "📦 Addons Path: ${ADDONS_PATH}"
 
 # Create dedicated Odoo user if we're using 'postgres' superuser
 if [ "${DB_USER}" = "postgres" ]; then
