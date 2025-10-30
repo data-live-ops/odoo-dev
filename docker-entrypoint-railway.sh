@@ -55,6 +55,6 @@ exec odoo \
     --limit-time-real="${LIMIT_TIME_REAL}" \
     --without-demo=all \
     --log-level=info \
-    --admin-passwd="${ADMIN_PASSWORD}" \
+    --admin-password="${ADMIN_PASSWORD}" \
     --server-wide-modules=base,web,queue_job \
     "$@"
