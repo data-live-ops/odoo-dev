@@ -99,6 +99,24 @@ else
     echo "✅ Database already initialized, skipping initialization"
 fi
 
+# Update module list to detect enterprise modules (always run to catch new modules)
+echo "🔄 Updating module list to detect all available modules..."
+odoo \
+    --config=/tmp/odoo.conf \
+    --addons-path="${ADDONS_PATH}" \
+    --db_host="${DB_HOST}" \
+    --db_port="${DB_PORT}" \
+    --db_user="${DB_USER}" \
+    --db_password="${DB_PASSWORD}" \
+    --database="${ODOO_DB_NAME}" \
+    --http-port="${HTTP_PORT}" \
+    --without-demo=all \
+    --log-level=info \
+    --stop-after-init \
+    -u base
+
+echo "✅ Module list updated successfully!"
+
 # Start Odoo with environment-based configuration
 echo "🚀 Starting Odoo server..."
 exec odoo \
