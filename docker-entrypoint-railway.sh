@@ -70,7 +70,37 @@ admin_passwd = ${ADMIN_PASSWORD}
 server_wide_modules = base,web,queue_job
 EOF
 
+# Check if database is initialized
+echo "🔍 Checking if Odoo database is initialized..."
+DB_INITIALIZED=$(PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -tAc \
+    "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'ir_module_module')" 2>/dev/null || echo "f")
+
+if [ "$DB_INITIALIZED" = "f" ]; then
+    echo "📦 Database not initialized. Initializing Odoo with base module..."
+    echo "⏳ This may take 2-3 minutes..."
+
+    # Initialize database with base module (no workers for init)
+    odoo \
+        --config=/tmp/odoo.conf \
+        --addons-path="${ADDONS_PATH}" \
+        --db_host="${DB_HOST}" \
+        --db_port="${DB_PORT}" \
+        --db_user="${DB_USER}" \
+        --db_password="${DB_PASSWORD}" \
+        --database="${ODOO_DB_NAME}" \
+        --http-port="${HTTP_PORT}" \
+        --without-demo=all \
+        --log-level=info \
+        --stop-after-init \
+        -i base
+
+    echo "✅ Database initialized successfully!"
+else
+    echo "✅ Database already initialized, skipping initialization"
+fi
+
 # Start Odoo with environment-based configuration
+echo "🚀 Starting Odoo server..."
 exec odoo \
     --config=/tmp/odoo.conf \
     --addons-path="${ADDONS_PATH}" \
@@ -78,6 +108,7 @@ exec odoo \
     --db_port="${DB_PORT}" \
     --db_user="${DB_USER}" \
     --db_password="${DB_PASSWORD}" \
+    --database="${ODOO_DB_NAME}" \
     --http-port="${HTTP_PORT}" \
     --proxy-mode \
     --workers="${WORKERS}" \
