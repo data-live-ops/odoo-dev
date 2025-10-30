@@ -45,6 +45,9 @@ odoo.conf.example
 # Enterprise addons symlink (not needed in Railway)
 addons
 
+# Enterprise folder (copied separately in Dockerfile)
+enterprise
+
 # Documentation (not needed in container)
 DEPLOYMENT.md
 DOCKER-SETUP.md
