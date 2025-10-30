@@ -26,7 +26,6 @@ fi
 ODOO_DB_NAME="${DB_NAME:-odoo_production}"
 ADMIN_PASSWORD="${ADMIN_PASSWD:-admin}"
 HTTP_PORT="${HTTP_PORT:-8069}"
-LONGPOLLING_PORT="${LONGPOLLING_PORT:-8072}"
 WORKERS="${WORKERS:-2}"
 MAX_CRON_THREADS="${MAX_CRON_THREADS:-2}"
 LIMIT_TIME_CPU="${LIMIT_TIME_CPU:-600}"
@@ -49,7 +48,6 @@ exec odoo \
     --database="${ODOO_DB_NAME}" \
     --db-filter="^${ODOO_DB_NAME}\$" \
     --http-port="${HTTP_PORT}" \
-    --longpolling-port="${LONGPOLLING_PORT}" \
     --proxy-mode \
     --workers="${WORKERS}" \
     --max-cron-threads="${MAX_CRON_THREADS}" \
