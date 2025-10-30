@@ -1,0 +1,13 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.railway"
+
+[deploy]
+startCommand = "/docker-entrypoint-railway.sh odoo"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+healthcheckPath = "/web/health"
+healthcheckTimeout = 300
+
+[[services]]
+name = "odoo"

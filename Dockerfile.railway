@@ -1,0 +1,36 @@
+# Production Dockerfile for Railway
+FROM odoo:18.0
+
+# Switch to root to install additional packages
+USER root
+
+# Install additional Python dependencies
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
+    phonenumbers \
+    geoip2
+
+# Create directories for custom addons
+RUN mkdir -p /mnt/custom-addons
+
+# Copy custom modules to container
+COPY --chown=odoo:odoo . /mnt/custom-addons/
+
+# Fix permissions
+RUN chown -R odoo:odoo /mnt/custom-addons
+
+# Create entrypoint script
+COPY --chown=odoo:odoo docker-entrypoint-railway.sh /
+RUN chmod +x /docker-entrypoint-railway.sh
+
+# Switch back to odoo user
+USER odoo
+
+# Set working directory
+WORKDIR /
+
+# Expose Odoo ports
+EXPOSE 8069 8072
+
+# Use our custom entrypoint
+ENTRYPOINT ["/docker-entrypoint-railway.sh"]
+CMD ["odoo"]

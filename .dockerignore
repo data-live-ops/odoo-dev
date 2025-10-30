@@ -34,3 +34,25 @@ SETUP.md
 # Scripts
 odoo-dev.sh
 setup-brew.sh
+test_*.py
+
+# Config files (use env vars in Railway)
+odoo.conf
+docker-compose.yml
+docker-compose.example.yml
+odoo.conf.example
+
+# Enterprise addons symlink (not needed in Railway)
+addons
+
+# Documentation (not needed in container)
+DEPLOYMENT.md
+DOCKER-SETUP.md
+
+# Environment files
+.env
+.env.example
+
+# Development files
+Dockerfile
+docker-entrypoint.sh
