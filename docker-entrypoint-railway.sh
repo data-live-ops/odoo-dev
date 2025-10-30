@@ -78,8 +78,6 @@ exec odoo \
     --db_port="${DB_PORT}" \
     --db_user="${DB_USER}" \
     --db_password="${DB_PASSWORD}" \
-    --database="${ODOO_DB_NAME}" \
-    --db-filter="^${ODOO_DB_NAME}\$" \
     --http-port="${HTTP_PORT}" \
     --proxy-mode \
     --workers="${WORKERS}" \
@@ -88,5 +86,4 @@ exec odoo \
     --limit-time-real="${LIMIT_TIME_REAL}" \
     --without-demo=all \
     --log-level=info \
-    --no-database-list \
     "$@"
