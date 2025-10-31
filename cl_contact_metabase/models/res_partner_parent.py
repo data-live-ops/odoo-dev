@@ -118,119 +118,133 @@ class ResPartner(models.Model):
                 sync_log.write({
                     "sync_type": "manual",
                 })
-            
+
             # Get configuration
             config = self.env["metabase.config"].search(
                 [("active", "=", True)], limit=1
             )
             if not config:
                 raise UserError("No active Metabase configuration found")
-            
-            # Get token
-            if not config.check_session():
-                raise UserError("Failed to get valid session token")
-            headers = {
-                "X-Metabase-Session": config.session_token
-            }
-            
-            # Prepare Parent API endpoint URL with configurable settings
-            parent_question = config.parent_details_question_url
-            if not parent_question:
-                raise UserError("Parent details question URL not configured")
-            
-            question_id = config.get_question_id(parent_question)
-            
-            # First get the question details
-            card_response = requests.get(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}",
-                headers=headers
-            )
-            
-            if card_response.status_code != 200:
-                raise UserError(f"Error getting question details: {card_response.text}")
-            
-            # Then get the results
-            results_response = requests.post(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}/query",
-                headers=headers
-            )
-            
-            if not results_response.status_code == 202:
-                raise UserError(f"Error getting question results: {results_response.text}")
-            
-            data = []
-            results = results_response.json()
-            if results and 'data' in results and 'rows' in results['data']:
-                data = results['data']['rows']
 
-            sync_log.raw_response = results
+            # Get parent data from Metabase (using config method with max_results support)
+            _logger.info("Fetching parent details from Metabase...")
+            data = config.get_parent_details()
+
+            if not data:
+                raise UserError("No data received from Metabase")
+
+            # Store raw response for debugging (don't store all data to save space)
+            total_records = len(data)
+            sync_log.raw_response = {"data": {"rows": []}, "row_count": total_records}
+
             created_count = 0
             updated_count = 0
+            skipped_count = 0
 
-            for parent_data in data:
-                metabase_parent_id = parent_data[0]
-                metabase_student_id = parent_data[1]
-                
-                student_id = self.search([("metabase_student_id", "=", str(metabase_student_id))], limit=1)
-                # Skip if student not found
-                if not student_id:
-                    _logger.warning(f"Student with ID {metabase_student_id} not found, skipping parent import")
-                    continue
-                
-                vals = self._prepare_parent_vals(parent_data, sync_log)
-                if not vals['name']:
-                    vals['name'] = "Parent of " + student_id.name
-                parent_contact_id = self.search([("metabase_parent_id", "=", str(metabase_parent_id))], limit=1)
+            # Process in batches to avoid timeout for large datasets
+            batch_size = 1000
+            total_batches = (total_records + batch_size - 1) // batch_size
 
-                if parent_contact_id:
-                    if parent_contact_id.metabase_student_ids and metabase_student_id:
-                        # Convert existing student_ids to a set to remove duplicates
-                        existing_student_ids = set(parent_contact_id.metabase_student_ids.split(','))
-                        # Add new student_id if it doesn't already exist
-                        new_id = metabase_student_id
-                        if new_id not in existing_student_ids:
-                            existing_student_ids.add(new_id)
-                        # Convert back to comma-separated string
-                        vals['metabase_student_ids'] = ','.join(existing_student_ids)
-                    elif metabase_student_id:
-                        vals['metabase_student_ids'] = metabase_student_id
+            _logger.info(f"Processing {total_records} records in {total_batches} batches of {batch_size}")
 
-                    parent_contact_id.write(vals)
-                    updated_count += 1
-                else:
-                    # Handle case when metabase_student_ids is False or empty
-                    if metabase_student_id:
-                        # For new records, just use the guardian_id directly
-                        # No need to check for duplicates since it's a new record
-                        vals['metabase_student_ids'] = metabase_student_id
-                    # Create new parent
-                    parent_contact_id = self.create(vals)
-                    created_count += 1
-                
-                student_id.student_parent_ids = [(4, parent_contact_id.id)]
-                parent_contact_id.student_parent_ids = [(4, student_id.id)]
+            for batch_num in range(total_batches):
+                start_idx = batch_num * batch_size
+                end_idx = min(start_idx + batch_size, total_records)
+                batch_data = data[start_idx:end_idx]
+
+                batch_created = 0
+                batch_updated = 0
+                batch_skipped = 0
+
+                for parent_data in batch_data:
+                    try:
+                        metabase_parent_id = parent_data[0]
+                        metabase_student_id = parent_data[1]
+
+                        student_id = self.search([("metabase_student_id", "=", str(metabase_student_id))], limit=1)
+                        # Skip if student not found
+                        if not student_id:
+                            _logger.warning(f"Student with ID {metabase_student_id} not found, skipping parent import")
+                            batch_skipped += 1
+                            continue
+
+                        vals = self._prepare_parent_vals(parent_data, sync_log)
+                        if not vals['name']:
+                            vals['name'] = "Parent of " + student_id.name
+                        parent_contact_id = self.search([("metabase_parent_id", "=", str(metabase_parent_id))], limit=1)
+
+                        if parent_contact_id:
+                            if parent_contact_id.metabase_student_ids and metabase_student_id:
+                                # Convert existing student_ids to a set to remove duplicates
+                                existing_student_ids = set(parent_contact_id.metabase_student_ids.split(','))
+                                # Add new student_id if it doesn't already exist
+                                new_id = metabase_student_id
+                                if new_id not in existing_student_ids:
+                                    existing_student_ids.add(new_id)
+                                # Convert back to comma-separated string
+                                vals['metabase_student_ids'] = ','.join(existing_student_ids)
+                            elif metabase_student_id:
+                                vals['metabase_student_ids'] = metabase_student_id
+
+                            parent_contact_id.write(vals)
+                            batch_updated += 1
+                        else:
+                            # Handle case when metabase_student_ids is False or empty
+                            if metabase_student_id:
+                                # For new records, just use the guardian_id directly
+                                # No need to check for duplicates since it's a new record
+                                vals['metabase_student_ids'] = metabase_student_id
+                            # Create new parent
+                            parent_contact_id = self.create(vals)
+                            batch_created += 1
+
+                        student_id.student_parent_ids = [(4, parent_contact_id.id)]
+                        parent_contact_id.student_parent_ids = [(4, student_id.id)]
+                    except Exception as e:
+                        _logger.warning(f"Error processing parent {metabase_parent_id}: {str(e)}")
+                        batch_skipped += 1
+                        continue
+
+                created_count += batch_created
+                updated_count += batch_updated
+                skipped_count += batch_skipped
+
+                # Commit after each batch to save progress
+                self.env.cr.commit()
+
+                # Log progress
+                progress_pct = ((batch_num + 1) / total_batches) * 100
+                _logger.info(
+                    f"Batch {batch_num + 1}/{total_batches} ({progress_pct:.1f}%): "
+                    f"Created {batch_created}, Updated {batch_updated}, Skipped {batch_skipped}. "
+                    f"Total so far: {created_count} created, {updated_count} updated, {skipped_count} skipped"
+                )
+
+                # Update sync log progress periodically (every 10 batches)
+                if (batch_num + 1) % 10 == 0 or (batch_num + 1) == total_batches:
+                    sync_log.write({
+                        "created_count": created_count,
+                        "updated_count": updated_count,
+                        "skipped_count": skipped_count,
+                    })
+                    self.env.cr.commit()
 
             sync_log.write(
                 {
                     "state": "done",
                     "end_date": fields.Datetime.now(),
-                    "total_records": len(data),
+                    "total_records": total_records,
                     "created_count": created_count,
                     "updated_count": updated_count,
+                    "skipped_count": skipped_count,
                 }
             )
+            self.env.cr.commit()
 
-            if created_count == 0 and updated_count == 0:
-                sync_log.write(
-                    {
-                        "state": "failed",
-                        "error_message": "No parents matched with student records",
-                    }
-                )
-                # sync_log.action_notify()
-                return False
-
-            _logger.info(f"Parent sync completed successfully: {created_count} created, {updated_count} updated")
+            _logger.info(
+                f"Parent sync completed successfully. Created: {created_count}, "
+                f"Updated: {updated_count}, Skipped: {skipped_count}"
+            )
             return True
 
         except Exception as e:

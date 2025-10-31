@@ -178,7 +178,18 @@
             <field name="state">code</field>
             <field name="code">model.run_action_sync_new_records_from_metabase()</field>
             <field name="active" eval="True"/>
-            <field name="interval_number">5</field>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+        </record>
+
+        <!-- Student Phase Incremental Sync - Every 15 Minutes -->
+        <record id="ir_cron_sync_student_phase_incremental" model="ir.cron">
+            <field name="name">Sync Student Phase Incremental (Every 15 min)</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model._sync_student_phase_incremental_with_retry()</field>
+            <field name="active" eval="True"/>
+            <field name="interval_number">15</field>
             <field name="interval_type">minutes</field>
         </record>
     </data>

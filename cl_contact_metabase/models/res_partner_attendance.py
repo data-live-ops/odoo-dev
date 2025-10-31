@@ -183,92 +183,118 @@ class ResPartner(models.Model):
                 sync_log.write({
                     "sync_type": "manual",
                 })
-            
+
             # Get configuration
             config = self.env["metabase.config"].search(
                 [("active", "=", True)], limit=1
             )
             if not config:
                 raise UserError("No active Metabase configuration found")
-            
-            # Get token
-            if not config.check_session():
-                raise UserError("Failed to get valid session token")
-            headers = {
-                "X-Metabase-Session": config.session_token
-            }
-            
-            # Prepare Attendance Main API endpoint URL with configurable settings
-            attendance_main_question = config.attendance_main_question_url
-            if not attendance_main_question:
-                raise UserError("Attendance main question URL not configured")
-            
-            question_id = config.get_question_id(attendance_main_question)
-            
-            # First get the question details
-            card_response = requests.get(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}",
-                headers=headers
-            )
-            
-            if card_response.status_code != 200:
-                raise UserError(f"Error getting question details: {card_response.text}")
-            
-            # Then get the results
-            results_response = requests.post(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}/query",
-                headers=headers
-            )
-            
-            if not results_response.status_code == 202:
-                raise UserError(f"Error getting question results: {results_response.text}")
-            
-            data = []
-            results = results_response.json()
-            if results and 'data' in results and 'rows' in results['data']:
-                data = results['data']['rows']
 
-            sync_log.raw_response = results
+            # Get attendance main data from Metabase (using config method with max_results support)
+            _logger.info("Fetching attendance main details from Metabase...")
+            data = config.get_attendance_main()
+
+            if not data:
+                raise UserError("No data received from Metabase")
+
+            # Store raw response for debugging (don't store all data to save space)
+            total_records = len(data)
+            sync_log.raw_response = {"data": {"rows": []}, "row_count": total_records}
+
             created_count = 0
             updated_count = 0
+            skipped_count = 0
 
-            for attendance_data in data:
-                student_user_id = attendance_data[0]
-                live_class_id = attendance_data[1]
-                
-                # Find the student contact
-                student_contact = self.search([("metabase_user_id", "=", str(student_user_id))], limit=1)
-                
-                if student_contact:
-                    # Prepare attendance main values
-                    vals = self._prepare_attendance_main_vals(attendance_data, sync_log)
-                    
-                    # Check if attendance main already exists
-                    existing_attendance = self.env['res.partner.attendance.main'].search([
-                        ('partner_id', '=', student_contact.id),
-                        ('live_class_id', '=', str(live_class_id)),
-                    ], limit=1)
-                    
-                    if existing_attendance:
-                        # Update existing attendance main
-                        existing_attendance.write(vals)
-                        updated_count += 1
-                    else:
-                        # Create new attendance main
-                        vals['partner_id'] = student_contact.id
-                        self.env['res.partner.attendance.main'].create(vals)
-                        created_count += 1
+            # Process in batches to avoid timeout for large datasets
+            batch_size = 1000
+            total_batches = (total_records + batch_size - 1) // batch_size
+
+            _logger.info(f"Processing {total_records} records in {total_batches} batches of {batch_size}")
+
+            for batch_num in range(total_batches):
+                start_idx = batch_num * batch_size
+                end_idx = min(start_idx + batch_size, total_records)
+                batch_data = data[start_idx:end_idx]
+
+                batch_created = 0
+                batch_updated = 0
+                batch_skipped = 0
+
+                for attendance_data in batch_data:
+                    try:
+                        student_user_id = attendance_data[0]
+                        live_class_id = attendance_data[1]
+
+                        # Find the student contact
+                        student_contact = self.search([("metabase_user_id", "=", str(student_user_id))], limit=1)
+
+                        if student_contact:
+                            # Prepare attendance main values
+                            vals = self._prepare_attendance_main_vals(attendance_data, sync_log)
+
+                            # Check if attendance main already exists
+                            existing_attendance = self.env['res.partner.attendance.main'].search([
+                                ('partner_id', '=', student_contact.id),
+                                ('live_class_id', '=', str(live_class_id)),
+                            ], limit=1)
+
+                            if existing_attendance:
+                                # Update existing attendance main
+                                existing_attendance.write(vals)
+                                batch_updated += 1
+                            else:
+                                # Create new attendance main
+                                vals['partner_id'] = student_contact.id
+                                self.env['res.partner.attendance.main'].create(vals)
+                                batch_created += 1
+                        else:
+                            batch_skipped += 1
+                    except Exception as e:
+                        _logger.warning(f"Error processing attendance main for user {student_user_id}: {str(e)}")
+                        batch_skipped += 1
+                        continue
+
+                created_count += batch_created
+                updated_count += batch_updated
+                skipped_count += batch_skipped
+
+                # Commit after each batch to save progress
+                self.env.cr.commit()
+
+                # Log progress
+                progress_pct = ((batch_num + 1) / total_batches) * 100
+                _logger.info(
+                    f"Batch {batch_num + 1}/{total_batches} ({progress_pct:.1f}%): "
+                    f"Created {batch_created}, Updated {batch_updated}, Skipped {batch_skipped}. "
+                    f"Total so far: {created_count} created, {updated_count} updated, {skipped_count} skipped"
+                )
+
+                # Update sync log progress periodically (every 10 batches)
+                if (batch_num + 1) % 10 == 0 or (batch_num + 1) == total_batches:
+                    sync_log.write({
+                        "created_count": created_count,
+                        "updated_count": updated_count,
+                        "skipped_count": skipped_count,
+                    })
+                    self.env.cr.commit()
 
             sync_log.write(
                 {
                     "state": "done",
                     "end_date": fields.Datetime.now(),
-                    "total_records": len(data),
+                    "total_records": total_records,
                     "created_count": created_count,
                     "updated_count": updated_count,
+                    "skipped_count": skipped_count,
                 }
             )
-            _logger.info("Attendance main sync completed successfully")
+            self.env.cr.commit()
+
+            _logger.info(
+                f"Attendance main sync completed successfully. Created: {created_count}, "
+                f"Updated: {updated_count}, Skipped: {skipped_count}"
+            )
             return True
 
         except Exception as e:
@@ -301,103 +327,129 @@ class ResPartner(models.Model):
                 sync_log.write({
                     "sync_type": "manual",
                 })
-            
+
             # Get configuration
             config = self.env["metabase.config"].search(
                 [("active", "=", True)], limit=1
             )
             if not config:
                 raise UserError("No active Metabase configuration found")
-            
-            # Get token
-            if not config.check_session():
-                raise UserError("Failed to get valid session token")
-            headers = {
-                "X-Metabase-Session": config.session_token
-            }
-            
-            # Prepare Attendance Details API endpoint URL with configurable settings
-            attendance_details_question = config.attendance_details_question_url
-            if not attendance_details_question:
-                raise UserError("Attendance details question URL not configured")
-            
-            question_id = config.get_question_id(attendance_details_question)
-            
-            # First get the question details
-            card_response = requests.get(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}",
-                headers=headers
-            )
-            
-            if card_response.status_code != 200:
-                raise UserError(f"Error getting question details: {card_response.text}")
-            
-            # Then get the results
-            results_response = requests.post(
-                f"{config.base_url.rstrip('/')}/api/card/{question_id}/query",
-                headers=headers
-            )
-            
-            if not results_response.status_code == 202:
-                raise UserError(f"Error getting question results: {results_response.text}")
-            
-            data = []
-            results = results_response.json()
-            if results and 'data' in results and 'rows' in results['data']:
-                data = results['data']['rows']
 
-            sync_log.raw_response = results
+            # Get attendance details data from Metabase (using config method with max_results support)
+            _logger.info("Fetching attendance details from Metabase...")
+            data = config.get_attendance_details()
+
+            if not data:
+                raise UserError("No data received from Metabase")
+
+            # Store raw response for debugging (don't store all data to save space)
+            total_records = len(data)
+            sync_log.raw_response = {"data": {"rows": []}, "row_count": total_records}
+
             created_count = 0
             updated_count = 0
+            skipped_count = 0
 
-            for attendance_data in data:
-                live_class_id = attendance_data[0]
-                
-                # Find the attendance main record by live_class_id
-                attendance_main = self.env['res.partner.attendance.main'].search([
-                    ('live_class_id', '=', str(live_class_id))
-                ], limit=1)
-                
-                if attendance_main:
-                    # Prepare attendance details values
-                    vals = self._prepare_attendance_details_vals(attendance_data, sync_log)
-                    
-                    # Check if attendance detail already exists
-                    existing_detail = self.env['res.partner.attendance.detail'].search([
-                        ('live_class_id', '=', str(live_class_id)),
-                        ('attendance_main_id', '=', attendance_main.id)
-                    ], limit=1)
-                    
-                    if existing_detail:
-                        # Update existing attendance detail
-                        existing_detail.write(vals)
-                        updated_count += 1
-                    else:
-                        # Create new attendance detail
-                        vals['attendance_main_id'] = attendance_main.id
-                        self.env['res.partner.attendance.detail'].create(vals)
-                        created_count += 1
-                    
-                    # set field class_topic, class_subject, teacher_name, class_start_time in attendance main
-                    attendance_main.write(
-                        {
-                            "class_topic": str(attendance_data[1]) if attendance_data[1] else False,
-                            "class_subject": str(attendance_data[2]) if attendance_data[2] else False,
-                            "class_start_time": str(attendance_data[3]) if attendance_data[3] else False,
-                            "teacher_name": str(attendance_data[4]) if attendance_data[4] else False,
-                        }
-                    )
+            # Process in batches to avoid timeout for large datasets
+            batch_size = 1000
+            total_batches = (total_records + batch_size - 1) // batch_size
+
+            _logger.info(f"Processing {total_records} records in {total_batches} batches of {batch_size}")
+
+            for batch_num in range(total_batches):
+                start_idx = batch_num * batch_size
+                end_idx = min(start_idx + batch_size, total_records)
+                batch_data = data[start_idx:end_idx]
+
+                batch_created = 0
+                batch_updated = 0
+                batch_skipped = 0
+
+                for attendance_data in batch_data:
+                    try:
+                        live_class_id = attendance_data[0]
+
+                        # Find the attendance main record by live_class_id
+                        attendance_main = self.env['res.partner.attendance.main'].search([
+                            ('live_class_id', '=', str(live_class_id))
+                        ], limit=1)
+
+                        if attendance_main:
+                            # Prepare attendance details values
+                            vals = self._prepare_attendance_details_vals(attendance_data, sync_log)
+
+                            # Check if attendance detail already exists
+                            existing_detail = self.env['res.partner.attendance.detail'].search([
+                                ('live_class_id', '=', str(live_class_id)),
+                                ('attendance_main_id', '=', attendance_main.id)
+                            ], limit=1)
+
+                            if existing_detail:
+                                # Update existing attendance detail
+                                existing_detail.write(vals)
+                                batch_updated += 1
+                            else:
+                                # Create new attendance detail
+                                vals['attendance_main_id'] = attendance_main.id
+                                self.env['res.partner.attendance.detail'].create(vals)
+                                batch_created += 1
+
+                            # set field class_topic, class_subject, teacher_name, class_start_time in attendance main
+                            attendance_main.write(
+                                {
+                                    "class_topic": str(attendance_data[1]) if attendance_data[1] else False,
+                                    "class_subject": str(attendance_data[2]) if attendance_data[2] else False,
+                                    "class_start_time": str(attendance_data[3]) if attendance_data[3] else False,
+                                    "teacher_name": str(attendance_data[4]) if attendance_data[4] else False,
+                                }
+                            )
+                        else:
+                            batch_skipped += 1
+                    except Exception as e:
+                        _logger.warning(f"Error processing attendance details for class {live_class_id}: {str(e)}")
+                        batch_skipped += 1
+                        continue
+
+                created_count += batch_created
+                updated_count += batch_updated
+                skipped_count += batch_skipped
+
+                # Commit after each batch to save progress
+                self.env.cr.commit()
+
+                # Log progress
+                progress_pct = ((batch_num + 1) / total_batches) * 100
+                _logger.info(
+                    f"Batch {batch_num + 1}/{total_batches} ({progress_pct:.1f}%): "
+                    f"Created {batch_created}, Updated {batch_updated}, Skipped {batch_skipped}. "
+                    f"Total so far: {created_count} created, {updated_count} updated, {skipped_count} skipped"
+                )
+
+                # Update sync log progress periodically (every 10 batches)
+                if (batch_num + 1) % 10 == 0 or (batch_num + 1) == total_batches:
+                    sync_log.write({
+                        "created_count": created_count,
+                        "updated_count": updated_count,
+                        "skipped_count": skipped_count,
+                    })
+                    self.env.cr.commit()
 
             sync_log.write(
                 {
                     "state": "done",
                     "end_date": fields.Datetime.now(),
-                    "total_records": len(data),
+                    "total_records": total_records,
                     "created_count": created_count,
                     "updated_count": updated_count,
+                    "skipped_count": skipped_count,
                 }
             )
-            _logger.info("Attendance details sync completed successfully")
+            self.env.cr.commit()
+
+            _logger.info(
+                f"Attendance details sync completed successfully. Created: {created_count}, "
+                f"Updated: {updated_count}, Skipped: {skipped_count}"
+            )
             return True
 
         except Exception as e:

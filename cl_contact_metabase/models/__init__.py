@@ -2,6 +2,7 @@ from . import metabase_config
 from . import sync_log
 from . import res_partner_student
 from . import res_partner_lead_stage
+from . import res_partner_student_phase
 from . import res_partner_parent
 from . import res_partner_subscription
 from . import res_partner_attendance

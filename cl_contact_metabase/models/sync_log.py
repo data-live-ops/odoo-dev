@@ -19,6 +19,7 @@ class MetabaseSyncLog(models.Model):
     total_records = fields.Integer('Total Records')
     created_count = fields.Integer('Created Records')
     updated_count = fields.Integer('Updated Records')
+    skipped_count = fields.Integer('Skipped Records')
     error_message = fields.Text('Error Message')
     raw_response = fields.Text('Raw Response')
     sync_type = fields.Selection([
@@ -28,6 +29,8 @@ class MetabaseSyncLog(models.Model):
     data_type = fields.Selection([
         ('student', 'Student'),
         ('lead', 'Lead Stages'),
+        ('student_phase', 'Student Phase'),
+        ('student_phase_incremental', 'Student Phase Incremental'),
         ('parent', 'Parent'),
         ('subscription', 'Subscription'),
         ('attendance', 'Attendance'),
@@ -70,6 +73,10 @@ class MetabaseSyncLog(models.Model):
             data_type = 'Student'
         elif self.data_type == 'lead':
             data_type = 'Student Lead'
+        elif self.data_type == 'student_phase':
+            data_type = 'Student Phase'
+        elif self.data_type == 'student_phase_incremental':
+            data_type = 'Student Phase Incremental'
         elif self.data_type == 'parent':
             data_type = 'Parent'
         elif self.data_type == 'subscription':
