@@ -10,3 +10,4 @@ from . import res_partner_payment_receive
 from . import res_partner_payment_slot_selection
 from . import res_partner_payment_paid_access
 from . import student_mass_update
+from . import mail_channel

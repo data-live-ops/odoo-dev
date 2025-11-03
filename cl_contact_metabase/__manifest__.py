@@ -10,7 +10,7 @@
     """,
     'author': 'PortCities',
     'website': 'https://www.portcities.net',
-    'depends': ['base', 'contacts', 'queue_job', 'cl_contact_base'],
+    'depends': ['base', 'contacts', 'queue_job', 'cl_contact_base', 'mail', 'whatsapp'],
     'data': [
         'security/ir.model.access.csv',
         'data/ir_sequence_data.xml',
