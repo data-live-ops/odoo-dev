@@ -5,8 +5,8 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class MailChannel(models.Model):
-    _inherit = 'mail.channel'
+class DiscussChannel(models.Model):
+    _inherit = 'discuss.channel'
 
     @api.model_create_multi
     def create(self, vals_list):
