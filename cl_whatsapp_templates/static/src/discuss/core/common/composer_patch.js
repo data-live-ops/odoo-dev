@@ -160,20 +160,27 @@ patch(Composer.prototype, {
     },
 
     _renderDropdown(templates) {
+        console.log("[WhatsApp Templates] _renderDropdown called with", templates.length, "templates");
+
         // Remove existing dropdown if any
         this._hideDropdown();
 
         // Find composer container
+        console.log("[WhatsApp Templates] Looking for composer...");
         const composer = document.querySelector('.o-mail-Composer textarea')?.closest('.o-mail-Composer');
+        console.log("[WhatsApp Templates] Composer found:", composer);
+
         if (!composer) {
             console.warn("[WhatsApp Templates] Composer not found for dropdown");
             return;
         }
 
         // Create dropdown element
+        console.log("[WhatsApp Templates] Creating dropdown element...");
         const dropdown = document.createElement('div');
         dropdown.className = 'o_template_suggestions';
         dropdown.id = 'whatsapp_template_dropdown';
+        dropdown.style.border = '2px solid red'; // Debug: make it visible
 
         // Create suggestions list
         const list = document.createElement('div');
@@ -220,8 +227,11 @@ patch(Composer.prototype, {
         dropdown.appendChild(footer);
 
         // Append to composer
+        console.log("[WhatsApp Templates] Appending dropdown to composer...");
         composer.appendChild(dropdown);
         console.log("[WhatsApp Templates] Dropdown rendered with", templates.length, "items");
+        console.log("[WhatsApp Templates] Dropdown element:", dropdown);
+        console.log("[WhatsApp Templates] Dropdown parent:", dropdown.parentElement);
     },
 
     _hideDropdown() {
