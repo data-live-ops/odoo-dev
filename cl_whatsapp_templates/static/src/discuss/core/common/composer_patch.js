@@ -29,8 +29,14 @@ patch(Composer.prototype, {
 
     _setupTemplateCommand() {
         // Get the textarea element
+        console.log("[WhatsApp Templates] Looking for textarea...", this.composerRef);
         const textarea = this.composerRef?.el?.querySelector("textarea");
-        if (!textarea) return;
+        console.log("[WhatsApp Templates] Textarea found:", textarea);
+
+        if (!textarea) {
+            console.warn("[WhatsApp Templates] Textarea not found!");
+            return;
+        }
 
         // Store original handlers
         this._originalKeyDown = textarea.onkeydown;
@@ -39,6 +45,7 @@ patch(Composer.prototype, {
         // Add our handlers
         textarea.addEventListener("keydown", this._onTemplateKeyDown.bind(this));
         textarea.addEventListener("input", this._onTemplateInput.bind(this));
+        console.log("[WhatsApp Templates] Event listeners attached successfully!");
     },
 
     _cleanupTemplateCommand() {
