@@ -27,9 +27,7 @@
     'assets': {
         'web.assets_backend': [
             'cl_whatsapp_templates/static/src/components/**/*',
-            'cl_whatsapp_templates/static/src/discuss/core/common/composer_patch.js',
-            'cl_whatsapp_templates/static/src/discuss/core/common/composer_patch.xml',
-            'cl_whatsapp_templates/static/src/discuss/core/common/composer_patch.scss',
+            'cl_whatsapp_templates/static/src/discuss/core/common/composer_suggestions_patch.js',
         ],
     },
     'installable': True,
