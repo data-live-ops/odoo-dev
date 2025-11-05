@@ -5,8 +5,8 @@ _logger = logging.getLogger(__name__)
 
 
 class WhatsAppTemplate(models.Model):
-    _name = 'whatsapp.template'
-    _description = 'WhatsApp Message Template'
+    _name = 'discuss.template'
+    _description = 'Discuss Message Template'
     _order = 'sequence, name'
 
     name = fields.Char(

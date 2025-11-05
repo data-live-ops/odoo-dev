@@ -2,8 +2,8 @@
 <odoo>
     <!-- Tree View -->
     <record id="view_whatsapp_template_tree" model="ir.ui.view">
-        <field name="name">whatsapp.template.tree</field>
-        <field name="model">whatsapp.template</field>
+        <field name="name">discuss.template.tree</field>
+        <field name="model">discuss.template</field>
         <field name="arch" type="xml">
             <tree string="WhatsApp Templates">
                 <field name="sequence" widget="handle"/>
@@ -19,8 +19,8 @@
 
     <!-- Form View -->
     <record id="view_whatsapp_template_form" model="ir.ui.view">
-        <field name="name">whatsapp.template.form</field>
-        <field name="model">whatsapp.template</field>
+        <field name="name">discuss.template.form</field>
+        <field name="model">discuss.template</field>
         <field name="arch" type="xml">
             <form string="WhatsApp Template">
                 <sheet>
@@ -69,8 +69,8 @@
 
     <!-- Search View -->
     <record id="view_whatsapp_template_search" model="ir.ui.view">
-        <field name="name">whatsapp.template.search</field>
-        <field name="model">whatsapp.template</field>
+        <field name="name">discuss.template.search</field>
+        <field name="model">discuss.template</field>
         <field name="arch" type="xml">
             <search string="Search Templates">
                 <field name="name" string="Name"/>
@@ -94,7 +94,7 @@
     <!-- Action -->
     <record id="action_whatsapp_template" model="ir.actions.act_window">
         <field name="name">WhatsApp Templates</field>
-        <field name="res_model">whatsapp.template</field>
+        <field name="res_model">discuss.template</field>
         <field name="view_mode">tree,form</field>
         <field name="context">{'search_default_active': 1}</field>
         <field name="help" type="html">

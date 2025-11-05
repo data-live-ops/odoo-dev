@@ -29,7 +29,7 @@ export class TemplatePicker extends Component {
         }
 
         const templates = await this.orm.searchRead(
-            "whatsapp.template",
+            "discuss.template",
             domain,
             ["id", "name", "content", "category", "description", "shortcut"],
             { order: "sequence, name" }

@@ -17,7 +17,7 @@ class DiscussChannel(models.Model):
         Returns:
             list: Template data for frontend
         """
-        return self.env['whatsapp.template'].get_templates_for_picker(category)
+        return self.env['discuss.template'].get_templates_for_picker(category)
 
     def action_insert_template(self, template_id, partner_id=None):
         """Insert a template into the message composer
@@ -29,7 +29,7 @@ class DiscussChannel(models.Model):
         Returns:
             dict: Template content with placeholders replaced
         """
-        template = self.env['whatsapp.template'].browse(template_id)
+        template = self.env['discuss.template'].browse(template_id)
 
         if not template.exists():
             return {'error': 'Template not found'}

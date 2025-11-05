@@ -2,7 +2,7 @@
 <odoo>
     <data noupdate="1">
         <!-- Sample Templates -->
-        <record id="template_greeting_general" model="whatsapp.template">
+        <record id="template_greeting_general" model="discuss.template">
             <field name="name">General Greeting</field>
             <field name="category">greeting</field>
             <field name="sequence">10</field>
@@ -13,7 +13,7 @@
 Terima kasih telah menghubungi {company_name}. Ada yang bisa kami bantu?</field>
         </record>
 
-        <record id="template_greeting_welcome" model="whatsapp.template">
+        <record id="template_greeting_welcome" model="discuss.template">
             <field name="name">Welcome to CoLearn</field>
             <field name="category">greeting</field>
             <field name="sequence">11</field>
@@ -24,7 +24,7 @@ Terima kasih telah menghubungi {company_name}. Ada yang bisa kami bantu?</field>
 Selamat datang di WA official Kakak Siaga CoLearn. Pilih bantuan di bawah ini ya:</field>
         </record>
 
-        <record id="template_info_office_hours" model="whatsapp.template">
+        <record id="template_info_office_hours" model="discuss.template">
             <field name="name">Office Hours</field>
             <field name="category">info</field>
             <field name="sequence">20</field>
@@ -37,7 +37,7 @@ Sabtu: 08:00 - 12:00 WIB
 Di luar jam tersebut, Anda dapat meninggalkan pesan dan kami akan membalasnya pada jam kerja berikutnya.</field>
         </record>
 
-        <record id="template_support_reinstall_app" model="whatsapp.template">
+        <record id="template_support_reinstall_app" model="discuss.template">
             <field name="name">App Reinstall Instructions</field>
             <field name="category">support</field>
             <field name="sequence">30</field>
@@ -48,7 +48,7 @@ Di luar jam tersebut, Anda dapat meninggalkan pesan dan kami akan membalasnya pa
 Apabila sudah melakukan reinstall mohon buka kembali aplikasinya dan bisa bantu screenshot lagi ya Zildijan 😊</field>
         </record>
 
-        <record id="template_closing_thank_you" model="whatsapp.template">
+        <record id="template_closing_thank_you" model="discuss.template">
             <field name="name">Thank You</field>
             <field name="category">closing</field>
             <field name="sequence">40</field>
@@ -59,7 +59,7 @@ Apabila sudah melakukan reinstall mohon buka kembali aplikasinya dan bisa bantu 
 Jika ada pertanyaan lain, jangan ragu untuk menghubungi kami kembali. Selamat beraktivitas! 😊</field>
         </record>
 
-        <record id="template_closing_follow_up" model="whatsapp.template">
+        <record id="template_closing_follow_up" model="discuss.template">
             <field name="name">Follow Up Later</field>
             <field name="category">closing</field>
             <field name="sequence">41</field>
