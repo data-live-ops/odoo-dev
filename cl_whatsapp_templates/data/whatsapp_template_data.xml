@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sample Templates -->
+        <record id="template_greeting_general" model="whatsapp.template">
+            <field name="name">General Greeting</field>
+            <field name="category">greeting</field>
+            <field name="sequence">10</field>
+            <field name="shortcut">/halo</field>
+            <field name="description">General greeting message</field>
+            <field name="content">Halo, {partner_name}!
+
+Terima kasih telah menghubungi {company_name}. Ada yang bisa kami bantu?</field>
+        </record>
+
+        <record id="template_greeting_welcome" model="whatsapp.template">
+            <field name="name">Welcome to CoLearn</field>
+            <field name="category">greeting</field>
+            <field name="sequence">11</field>
+            <field name="shortcut">/welcome</field>
+            <field name="description">Welcome message for new contacts</field>
+            <field name="content">Halo, Bapak/Ibu/CoFriend.
+
+Selamat datang di WA official Kakak Siaga CoLearn. Pilih bantuan di bawah ini ya:</field>
+        </record>
+
+        <record id="template_info_office_hours" model="whatsapp.template">
+            <field name="name">Office Hours</field>
+            <field name="category">info</field>
+            <field name="sequence">20</field>
+            <field name="shortcut">/hours</field>
+            <field name="description">Information about office hours</field>
+            <field name="content">Jam operasional kami:
+Senin - Jumat: 08:00 - 17:00 WIB
+Sabtu: 08:00 - 12:00 WIB
+
+Di luar jam tersebut, Anda dapat meninggalkan pesan dan kami akan membalasnya pada jam kerja berikutnya.</field>
+        </record>
+
+        <record id="template_support_reinstall_app" model="whatsapp.template">
+            <field name="name">App Reinstall Instructions</field>
+            <field name="category">support</field>
+            <field name="sequence">30</field>
+            <field name="shortcut">/reinstall</field>
+            <field name="description">Steps to reinstall the app</field>
+            <field name="content">Baik, apakah boleh dibantu reinstall aplikasi CoLearnnya Bapak/Ibu?
+
+Apabila sudah melakukan reinstall mohon buka kembali aplikasinya dan bisa bantu screenshot lagi ya Zildijan 😊</field>
+        </record>
+
+        <record id="template_closing_thank_you" model="whatsapp.template">
+            <field name="name">Thank You</field>
+            <field name="category">closing</field>
+            <field name="sequence">40</field>
+            <field name="shortcut">/thanks</field>
+            <field name="description">Thank you message</field>
+            <field name="content">Terima kasih telah menghubungi kami, {partner_name}!
+
+Jika ada pertanyaan lain, jangan ragu untuk menghubungi kami kembali. Selamat beraktivitas! 😊</field>
+        </record>
+
+        <record id="template_closing_follow_up" model="whatsapp.template">
+            <field name="name">Follow Up Later</field>
+            <field name="category">closing</field>
+            <field name="sequence">41</field>
+            <field name="shortcut">/followup</field>
+            <field name="description">Promise to follow up</field>
+            <field name="content">Baik, {partner_name}. Kami akan follow up kembali untuk hal ini.
+
+Mohon tunggu informasi lebih lanjut dari kami ya. Terima kasih atas kesabarannya! 🙏</field>
+        </record>
+    </data>
+</odoo>

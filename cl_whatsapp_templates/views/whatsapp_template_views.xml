@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_whatsapp_template_tree" model="ir.ui.view">
+        <field name="name">whatsapp.template.tree</field>
+        <field name="model">whatsapp.template</field>
+        <field name="arch" type="xml">
+            <tree string="WhatsApp Templates">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="category"/>
+                <field name="shortcut"/>
+                <field name="description"/>
+                <field name="usage_count"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_whatsapp_template_form" model="ir.ui.view">
+        <field name="name">whatsapp.template.form</field>
+        <field name="model">whatsapp.template</field>
+        <field name="arch" type="xml">
+            <form string="WhatsApp Template">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="active" widget="boolean_button" options="{'terminology': 'archive'}"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="e.g., Welcome Message"/>
+                            <field name="category"/>
+                            <field name="shortcut" placeholder="e.g., /welcome"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="usage_count" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description" placeholder="Brief description of when to use this template"/>
+                    </group>
+                    <notebook>
+                        <page string="Content" name="content">
+                            <group>
+                                <field name="content" widget="text" placeholder="Enter your message template here..."/>
+                            </group>
+                            <group string="Available Placeholders" name="placeholders">
+                                <div class="alert alert-info" role="alert">
+                                    <p><strong>You can use the following placeholders:</strong></p>
+                                    <ul>
+                                        <li><code>{partner_name}</code> - Contact's name</li>
+                                        <li><code>{partner_phone}</code> - Contact's phone number</li>
+                                        <li><code>{partner_email}</code> - Contact's email</li>
+                                        <li><code>{company_name}</code> - Your company name</li>
+                                    </ul>
+                                    <p><em>Example:</em> "Halo {partner_name}, terima kasih telah menghubungi {company_name}."</p>
+                                </div>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_whatsapp_template_search" model="ir.ui.view">
+        <field name="name">whatsapp.template.search</field>
+        <field name="model">whatsapp.template</field>
+        <field name="arch" type="xml">
+            <search string="Search Templates">
+                <field name="name" string="Name"/>
+                <field name="content" string="Content"/>
+                <field name="shortcut"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Greeting" name="greeting" domain="[('category', '=', 'greeting')]"/>
+                <filter string="Information" name="info" domain="[('category', '=', 'info')]"/>
+                <filter string="Support" name="support" domain="[('category', '=', 'support')]"/>
+                <filter string="Closing" name="closing" domain="[('category', '=', 'closing')]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Category" name="group_category" context="{'group_by': 'category'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_whatsapp_template" model="ir.actions.act_window">
+        <field name="name">WhatsApp Templates</field>
+        <field name="res_model">whatsapp.template</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first WhatsApp template
+            </p>
+            <p>
+                Templates help you respond quickly to common questions and scenarios.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem id="menu_whatsapp_templates_root"
+              name="WhatsApp Templates"
+              parent="whatsapp.menu_whatsapp_root"
+              sequence="10"/>
+
+    <menuitem id="menu_whatsapp_templates"
+              name="Templates"
+              parent="menu_whatsapp_templates_root"
+              action="action_whatsapp_template"
+              sequence="1"/>
+</odoo>

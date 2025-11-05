@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Server Action to Open Template Picker -->
+    <record id="action_open_template_picker" model="ir.actions.server">
+        <field name="name">Insert Template</field>
+        <field name="model_id" ref="mail.model_discuss_channel"/>
+        <field name="binding_model_id" ref="mail.model_discuss_channel"/>
+        <field name="binding_view_types">form</field>
+        <field name="state">code</field>
+        <field name="code">
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Select Template',
+    'res_model': 'whatsapp.template',
+    'view_mode': 'tree,form',
+    'views': [(False, 'tree'), (False, 'form')],
+    'target': 'new',
+    'domain': [('active', '=', True)],
+    'context': {'default_active': True},
+}
+        </field>
+    </record>
+</odoo>

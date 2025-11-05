@@ -1,0 +1,46 @@
+.o_whatsapp_template_picker {
+    padding: 1rem;
+    max-height: 500px;
+    overflow-y: auto;
+
+    .o_template_picker_header {
+        margin-bottom: 1rem;
+
+        h4 {
+            margin-bottom: 1rem;
+        }
+    }
+
+    .o_template_picker_list {
+        .o_template_item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transform: translateY(-2px);
+            }
+
+            .card-body {
+                padding: 0.75rem;
+            }
+
+            .card-title {
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: #495057;
+            }
+
+            .card-text {
+                font-size: 0.85rem;
+                max-height: 3em;
+                overflow: hidden;
+            }
+
+            .badge {
+                font-size: 0.7rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+    }
+}
