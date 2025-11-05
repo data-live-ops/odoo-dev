@@ -108,10 +108,12 @@ patch(Composer.prototype, {
             case "ArrowDown":
                 ev.preventDefault();
                 this.templateState.selectedIndex = (selectedIndex + 1) % suggestions.length;
+                this._updateSelectedItem();
                 break;
             case "ArrowUp":
                 ev.preventDefault();
                 this.templateState.selectedIndex = (selectedIndex - 1 + suggestions.length) % suggestions.length;
+                this._updateSelectedItem();
                 break;
             case "Enter":
             case "Tab":
@@ -123,6 +125,7 @@ patch(Composer.prototype, {
             case "Escape":
                 ev.preventDefault();
                 this.templateState.showSuggestions = false;
+                this._hideDropdown();
                 break;
         }
     },
@@ -139,11 +142,105 @@ patch(Composer.prototype, {
             this.templateState.showSuggestions = templates.length > 0;
             this.templateState.selectedIndex = 0;
             console.log(`[WhatsApp Templates] Found ${templates.length} templates for '${command}'`);
+            console.log(`[WhatsApp Templates] showSuggestions = ${this.templateState.showSuggestions}`);
+            console.log(`[WhatsApp Templates] Templates:`, templates);
+
+            // Manually render dropdown (workaround for template inheritance issue)
+            if (templates.length > 0) {
+                this._renderDropdown(templates);
+            } else {
+                this._hideDropdown();
+            }
         } catch (error) {
             console.error("Error searching templates:", error);
             this.templateState.showSuggestions = false;
             this.templateState.suggestions = [];
+            this._hideDropdown();
         }
+    },
+
+    _renderDropdown(templates) {
+        // Remove existing dropdown if any
+        this._hideDropdown();
+
+        // Find composer container
+        const composer = document.querySelector('.o-mail-Composer textarea')?.closest('.o-mail-Composer');
+        if (!composer) {
+            console.warn("[WhatsApp Templates] Composer not found for dropdown");
+            return;
+        }
+
+        // Create dropdown element
+        const dropdown = document.createElement('div');
+        dropdown.className = 'o_template_suggestions';
+        dropdown.id = 'whatsapp_template_dropdown';
+
+        // Create suggestions list
+        const list = document.createElement('div');
+        list.className = 'o_template_suggestions_list';
+
+        templates.forEach((template, index) => {
+            const item = document.createElement('div');
+            item.className = 'o_template_suggestion_item';
+            if (index === this.templateState.selectedIndex) {
+                item.classList.add('o_template_suggestion_selected');
+            }
+
+            item.innerHTML = `
+                <div class="o_template_suggestion_header">
+                    <span class="o_template_suggestion_name">${template.name}</span>
+                    ${template.shortcut ? `<span class="o_template_suggestion_shortcut">${template.shortcut}</span>` : ''}
+                </div>
+                ${template.description ? `<div class="o_template_suggestion_description">${template.description}</div>` : ''}
+                <div class="o_template_suggestion_preview">${template.content}</div>
+            `;
+
+            // Add click handler
+            item.addEventListener('click', () => this._insertTemplate(template));
+            item.addEventListener('mouseenter', () => {
+                this.templateState.selectedIndex = index;
+                this._updateSelectedItem();
+            });
+
+            list.appendChild(item);
+        });
+
+        dropdown.appendChild(list);
+
+        // Create footer
+        const footer = document.createElement('div');
+        footer.className = 'o_template_suggestions_footer';
+        footer.innerHTML = `
+            <small class="text-muted">
+                <i class="fa fa-arrow-up"></i> <i class="fa fa-arrow-down"></i> to navigate,
+                <i class="fa fa-level-down"></i> to select,
+                <i class="fa fa-times"></i> to cancel
+            </small>
+        `;
+        dropdown.appendChild(footer);
+
+        // Append to composer
+        composer.appendChild(dropdown);
+        console.log("[WhatsApp Templates] Dropdown rendered with", templates.length, "items");
+    },
+
+    _hideDropdown() {
+        const existing = document.getElementById('whatsapp_template_dropdown');
+        if (existing) {
+            existing.remove();
+            console.log("[WhatsApp Templates] Dropdown hidden");
+        }
+    },
+
+    _updateSelectedItem() {
+        const items = document.querySelectorAll('.o_template_suggestion_item');
+        items.forEach((item, index) => {
+            if (index === this.templateState.selectedIndex) {
+                item.classList.add('o_template_suggestion_selected');
+            } else {
+                item.classList.remove('o_template_suggestion_selected');
+            }
+        });
     },
 
     async _insertTemplate(template) {
@@ -184,6 +281,7 @@ patch(Composer.prototype, {
         this.templateState.showSuggestions = false;
         this.templateState.suggestions = [];
         this.templateState.selectedIndex = 0;
+        this._hideDropdown();
     },
 
     _replaceSlashCommand(textarea, content) {
