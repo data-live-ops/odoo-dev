@@ -109,12 +109,11 @@
 
     <!-- Menu Items -->
     <menuitem id="menu_whatsapp_templates_root"
-              name="WhatsApp Templates"
-              parent="whatsapp.menu_whatsapp_root"
-              sequence="10"/>
+              name="Discuss Templates"
+              sequence="90"/>
 
     <menuitem id="menu_whatsapp_templates"
-              name="Templates"
+              name="Message Templates"
               parent="menu_whatsapp_templates_root"
               action="action_whatsapp_template"
               sequence="1"/>
