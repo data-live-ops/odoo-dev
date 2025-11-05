@@ -78,16 +78,19 @@ patch(Composer.prototype, {
         const textarea = ev.target;
         const cursorPos = textarea.selectionStart;
         const textBeforeCursor = textarea.value.substring(0, cursorPos);
-        console.log("[WhatsApp Templates] Input event:", textBeforeCursor);
 
         // Check if we have a slash command
         const slashMatch = textBeforeCursor.match(/\/(\w*)$/);
         if (slashMatch) {
             const command = slashMatch[1];
-            console.log("[WhatsApp Templates] Slash command detected:", command);
+            console.log(`[WhatsApp Templates] Slash detected! Command: "${command}" (length: ${command.length})`);
             this.templateState.searchCommand = command;
             await this._searchTemplates(command);
         } else {
+            // Hide suggestions if no slash command
+            if (this.templateState.showSuggestions) {
+                console.log("[WhatsApp Templates] No slash command, hiding suggestions");
+            }
             this.templateState.showSuggestions = false;
             this.templateState.suggestions = [];
         }
