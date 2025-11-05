@@ -175,16 +175,44 @@ patch(Composer.prototype, {
             return;
         }
 
+        // Ensure composer has relative positioning for absolute dropdown
+        if (window.getComputedStyle(composer).position === 'static') {
+            composer.style.position = 'relative';
+            console.log("[WhatsApp Templates] Set composer position to relative");
+        }
+
         // Create dropdown element
         console.log("[WhatsApp Templates] Creating dropdown element...");
         const dropdown = document.createElement('div');
         dropdown.className = 'o_template_suggestions';
         dropdown.id = 'whatsapp_template_dropdown';
-        dropdown.style.border = '2px solid red'; // Debug: make it visible
+
+        // Force inline styles for debugging
+        dropdown.style.cssText = `
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid red;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            max-height: 400px;
+            overflow: visible;
+            display: block !important;
+            visibility: visible !important;
+        `;
 
         // Create suggestions list
         const list = document.createElement('div');
         list.className = 'o_template_suggestions_list';
+        list.style.cssText = `
+            overflow-y: auto;
+            flex: 1;
+            background: white;
+        `;
 
         templates.forEach((template, index) => {
             const item = document.createElement('div');
@@ -192,6 +220,15 @@ patch(Composer.prototype, {
             if (index === this.templateState.selectedIndex) {
                 item.classList.add('o_template_suggestion_selected');
             }
+
+            // Force item visibility
+            item.style.cssText = `
+                padding: 12px 16px;
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+                background: white;
+                display: block;
+            `;
 
             item.innerHTML = `
                 <div class="o_template_suggestion_header">
