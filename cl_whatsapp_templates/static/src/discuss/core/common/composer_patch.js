@@ -126,9 +126,9 @@ patch(Composer.prototype, {
 
     async _searchTemplates(command) {
         try {
-            // Updated: Use your custom model (adjust if needed)
+            // Call method on discuss.channel model (where the method is defined)
             const templates = await this.orm.call(
-                "whatsapp.template",  // Assuming custom model; was "discuss.channel"
+                "discuss.channel",
                 "search_templates_by_command",
                 [command]
             );
@@ -161,7 +161,7 @@ patch(Composer.prototype, {
                 return;
             }
             const result = await this.orm.call(
-                "whatsapp.template",  // Consistent with search
+                "discuss.channel",
                 "get_template_content_for_channel",
                 [channelId, template.id]
             );
