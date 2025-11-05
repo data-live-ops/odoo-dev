@@ -86,13 +86,15 @@ class WhatsAppTemplate(models.Model):
         self.ensure_one()
         content = self.content
 
+        # Always replace company placeholders
+        content = content.replace('{company_name}', self.env.company.name or '')
+
+        # Replace partner placeholders if partner is provided
         if partner_id:
-            # Replace common placeholders
             replacements = {
                 '{partner_name}': partner_id.name or '',
                 '{partner_phone}': partner_id.mobile or partner_id.phone or '',
                 '{partner_email}': partner_id.email or '',
-                '{company_name}': self.env.company.name or '',
             }
 
             for placeholder, value in replacements.items():

@@ -58,28 +58,43 @@ class DiscussChannel(models.Model):
 
         return result
 
-    def get_template_content_for_channel(self, template_id):
+    @api.model
+    def get_template_content_for_channel(self, channel_id, template_id):
         """Get template content with placeholders replaced for current channel
 
         Args:
+            channel_id: ID of the channel
             template_id: ID of template
 
         Returns:
             dict: Template content with replacements applied
         """
-        self.ensure_one()
-        template = self.env['discuss.template'].browse(template_id)
+        channel = self.browse(channel_id)
+        if not channel.exists():
+            _logger.warning(f"[WhatsApp Templates] Channel {channel_id} not found")
+            return {'error': 'Channel not found'}
 
+        template = self.env['discuss.template'].browse(template_id)
         if not template.exists():
+            _logger.warning(f"[WhatsApp Templates] Template {template_id} not found")
             return {'error': 'Template not found'}
 
         # Get partner from channel
         partner = None
-        if self.channel_type == 'whatsapp' and self.whatsapp_number:
-            partner = self._find_partner_by_phone(self.whatsapp_number)
+        _logger.info(f"[WhatsApp Templates] Channel type: {channel.channel_type}, WhatsApp number: {channel.whatsapp_number}")
+
+        if channel.channel_type == 'whatsapp' and channel.whatsapp_number:
+            partner = channel._find_partner_by_phone(channel.whatsapp_number)
+            if partner:
+                _logger.info(f"[WhatsApp Templates] Partner found: {partner.name} (ID: {partner.id})")
+            else:
+                _logger.warning(f"[WhatsApp Templates] Partner not found for number: {channel.whatsapp_number}")
+        else:
+            _logger.info(f"[WhatsApp Templates] Channel is not WhatsApp type or no phone number")
 
         # Apply placeholders
         content = template.apply_placeholders(partner)
+        _logger.info(f"[WhatsApp Templates] Template applied. Content length: {len(content)}")
 
         # Increment usage counter
         template.action_use_template()
