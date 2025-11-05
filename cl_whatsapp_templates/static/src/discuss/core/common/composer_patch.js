@@ -8,6 +8,7 @@ import { useState, onMounted, onWillUnmount } from "@odoo/owl";
 patch(Composer.prototype, {
     setup() {
         super.setup(...arguments);
+        console.log("[WhatsApp Templates] Composer patch loaded!");
         this.orm = useService("orm");
         this.templateState = useState({
             suggestions: [],
@@ -17,6 +18,7 @@ patch(Composer.prototype, {
         });
 
         onMounted(() => {
+            console.log("[WhatsApp Templates] Composer mounted, setting up template command");
             this._setupTemplateCommand();
         });
 
@@ -52,11 +54,14 @@ patch(Composer.prototype, {
         const cursorPos = textarea.selectionStart;
         const textBeforeCursor = textarea.value.substring(0, cursorPos);
 
+        console.log("[WhatsApp Templates] Input event:", textBeforeCursor);
+
         // Check if we have a slash command
         const slashMatch = textBeforeCursor.match(/\/(\w*)$/);
 
         if (slashMatch) {
             const command = slashMatch[1];
+            console.log("[WhatsApp Templates] Slash command detected:", command);
             this.templateState.searchCommand = command;
             await this._searchTemplates(command);
         } else {
