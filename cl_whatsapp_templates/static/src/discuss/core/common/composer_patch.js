@@ -3,14 +3,13 @@
 import { Composer } from "@mail/core/common/composer";
 import { patch } from "@web/core/utils/patch";
 import { useService } from "@web/core/utils/hooks";
-import { useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
+import { useState, onMounted, onWillUnmount } from "@odoo/owl";
 
 patch(Composer.prototype, {
     setup() {
         super.setup(...arguments);
         console.log("[WhatsApp Templates] Composer patch loaded!");
         this.orm = useService("orm");
-        this.rootRef = useRef("root");
         this.templateState = useState({
             suggestions: [],
             showSuggestions: false,
@@ -21,14 +20,10 @@ patch(Composer.prototype, {
         // Store bound handlers to properly remove them later
         this._boundKeyDown = this._onTemplateKeyDown.bind(this);
         this._boundInput = this._onTemplateInput.bind(this);
-        this._textareaElement = null;
 
         onMounted(() => {
             console.log("[WhatsApp Templates] Composer mounted, setting up template command");
-            // Use setTimeout to ensure DOM is fully rendered
-            setTimeout(() => {
-                this._setupTemplateCommand();
-            }, 100);
+            this._setupTemplateCommand();
         });
 
         onWillUnmount(() => {
@@ -37,52 +32,27 @@ patch(Composer.prototype, {
     },
 
     _setupTemplateCommand() {
-        // Try multiple methods to find textarea
-        console.log("[WhatsApp Templates] Looking for textarea...");
-        console.log("[WhatsApp Templates] rootRef:", this.rootRef);
+        console.log("[WhatsApp Templates] Setting up template command with document-level listener");
 
-        let textarea = null;
+        // Use document-level event delegation
+        // This will capture events from any textarea in the composer
+        document.addEventListener("input", this._boundInput, true);
+        document.addEventListener("keydown", this._boundKeyDown, true);
 
-        // Method 1: Try from rootRef
-        if (this.rootRef?.el) {
-            textarea = this.rootRef.el.querySelector("textarea");
-            console.log("[WhatsApp Templates] Method 1 (rootRef):", textarea);
-        }
-
-        // Method 2: Try from composerRef if exists
-        if (!textarea && this.composerRef?.el) {
-            textarea = this.composerRef.el.querySelector("textarea");
-            console.log("[WhatsApp Templates] Method 2 (composerRef):", textarea);
-        }
-
-        // Method 3: Try direct querySelector from component root
-        if (!textarea && this.__owl__?.bdom?.el) {
-            textarea = this.__owl__.bdom.el.querySelector("textarea");
-            console.log("[WhatsApp Templates] Method 3 (__owl__):", textarea);
-        }
-
-        if (!textarea) {
-            console.warn("[WhatsApp Templates] Textarea not found! Will retry on next mount.");
-            return;
-        }
-
-        this._textareaElement = textarea;
-
-        // Add our handlers
-        textarea.addEventListener("keydown", this._boundKeyDown);
-        textarea.addEventListener("input", this._boundInput);
-        console.log("[WhatsApp Templates] Event listeners attached successfully to:", textarea);
+        console.log("[WhatsApp Templates] Document-level event listeners attached!");
     },
 
     _cleanupTemplateCommand() {
-        if (this._textareaElement) {
-            this._textareaElement.removeEventListener("keydown", this._boundKeyDown);
-            this._textareaElement.removeEventListener("input", this._boundInput);
-            this._textareaElement = null;
-        }
+        console.log("[WhatsApp Templates] Cleaning up event listeners");
+        document.removeEventListener("input", this._boundInput, true);
+        document.removeEventListener("keydown", this._boundKeyDown, true);
     },
 
     async _onTemplateInput(ev) {
+        // Only process if this is a textarea in a composer
+        if (ev.target.tagName !== 'TEXTAREA') return;
+        if (!ev.target.closest('.o-mail-Composer')) return;
+
         const textarea = ev.target;
         const cursorPos = textarea.selectionStart;
         const textBeforeCursor = textarea.value.substring(0, cursorPos);
@@ -104,6 +74,10 @@ patch(Composer.prototype, {
     },
 
     async _onTemplateKeyDown(ev) {
+        // Only process if this is a textarea in a composer
+        if (ev.target.tagName !== 'TEXTAREA') return;
+        if (!ev.target.closest('.o-mail-Composer')) return;
+
         if (!this.templateState.showSuggestions) return;
 
         const { suggestions, selectedIndex } = this.templateState;
@@ -154,14 +128,21 @@ patch(Composer.prototype, {
     },
 
     async _insertTemplate(template) {
-        const textarea = this.composerRef?.el?.querySelector("textarea");
-        if (!textarea) return;
+        // Get currently focused textarea
+        const textarea = document.activeElement;
+        if (!textarea || textarea.tagName !== 'TEXTAREA') {
+            console.warn("[WhatsApp Templates] No textarea focused");
+            return;
+        }
+
+        console.log("[WhatsApp Templates] Inserting template:", template.name);
 
         try {
             // Get template content with placeholders replaced
             const channelId = this.props.composer?.thread?.id;
             if (!channelId) {
                 // Fallback: use raw content
+                console.log("[WhatsApp Templates] No channelId, using raw content");
                 this._replaceSlashCommand(textarea, template.content);
                 return;
             }
@@ -176,6 +157,7 @@ patch(Composer.prototype, {
                 console.error("Error getting template content:", result.error);
                 this._replaceSlashCommand(textarea, template.content);
             } else {
+                console.log("[WhatsApp Templates] Template content received:", result.content);
                 this._replaceSlashCommand(textarea, result.content);
             }
         } catch (error) {
