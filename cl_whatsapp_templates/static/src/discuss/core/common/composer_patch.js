@@ -1,8 +1,7 @@
-/** @odoo-module **/
 import { Composer } from "@mail/core/common/composer";
 import { patch } from "@web/core/utils/patch";
 import { useService } from "@web/core/utils/hooks";
-import { useState, onMounted, onWillUnmount } from "@odoo/owl";
+import { useState, onMounted, onPatched, onWillUnmount } from "@odoo/owl";
 
 patch(Composer.prototype, {
     setup() {
@@ -15,13 +14,20 @@ patch(Composer.prototype, {
             selectedIndex: 0,
             searchCommand: "",
         });
-        // Store bound handlers to properly remove them later
         this._boundKeyDown = this._onTemplateKeyDown.bind(this);
         this._boundInput = this._onTemplateInput.bind(this);
 
         onMounted(() => {
             console.log("[WhatsApp Templates] Composer mounted, setting up template command ✅");
-            this._setupTemplateCommand();
+            // Delay for OWL ref timing
+            setTimeout(() => this._setupTemplateCommand(), 0);
+        });
+
+        // Fallback: Re-check on patches (e.g., if re-rendered)
+        onPatched(() => {
+            if (!this._listenersAttached) {
+                setTimeout(() => this._setupTemplateCommand(), 0);
+            }
         });
 
         onWillUnmount(() => {
@@ -30,35 +36,37 @@ patch(Composer.prototype, {
     },
 
     _setupTemplateCommand() {
-        // Prefer direct attachment via built-in ref for precision
+        if (this._listenersAttached) return;  // Prevent duplicates
+
         const textarea = this.inputRef?.el;
         if (textarea) {
             console.log("[WhatsApp Templates] Textarea found via ref! Attaching direct listeners. ✅", textarea);
             textarea.addEventListener("input", this._boundInput, true);
             textarea.addEventListener("keydown", this._boundKeyDown, true);
-            // Initial check for existing content
-            this._onTemplateInput({ target: textarea });
+            this._boundInput({ target: textarea });  // Initial scan
+            this._listenersAttached = true;
             return;
         }
 
-        // Fallback to document-level if ref fails (edge case)
+        // Fallback
         console.warn("[WhatsApp Templates] Ref not ready, using document fallback.");
         document.addEventListener("input", this._boundInput, true);
         document.addEventListener("keydown", this._boundKeyDown, true);
+        this._boundInput({ target: document.activeElement });  // Initial scan
+        this._listenersAttached = true;
     },
 
     _cleanupTemplateCommand() {
         console.log("[WhatsApp Templates] Cleaning up event listeners");
         const textarea = this.inputRef?.el;
-        if (textarea) {
-            // Direct cleanup if attached
+        if (textarea && this._listenersAttached) {
             textarea.removeEventListener("input", this._boundInput, true);
             textarea.removeEventListener("keydown", this._boundKeyDown, true);
         } else {
-            // Fallback cleanup
             document.removeEventListener("input", this._boundInput, true);
             document.removeEventListener("keydown", this._boundKeyDown, true);
         }
+        this._listenersAttached = false;
         this.templateState.showSuggestions = false;
         this.templateState.suggestions = [];
     },
