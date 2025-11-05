@@ -3,13 +3,14 @@
 import { Composer } from "@mail/core/common/composer";
 import { patch } from "@web/core/utils/patch";
 import { useService } from "@web/core/utils/hooks";
-import { useState, onMounted, onWillUnmount } from "@odoo/owl";
+import { useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
 
 patch(Composer.prototype, {
     setup() {
         super.setup(...arguments);
         console.log("[WhatsApp Templates] Composer patch loaded!");
         this.orm = useService("orm");
+        this.rootRef = useRef("root");
         this.templateState = useState({
             suggestions: [],
             showSuggestions: false,
@@ -17,9 +18,17 @@ patch(Composer.prototype, {
             searchCommand: "",
         });
 
+        // Store bound handlers to properly remove them later
+        this._boundKeyDown = this._onTemplateKeyDown.bind(this);
+        this._boundInput = this._onTemplateInput.bind(this);
+        this._textareaElement = null;
+
         onMounted(() => {
             console.log("[WhatsApp Templates] Composer mounted, setting up template command");
-            this._setupTemplateCommand();
+            // Use setTimeout to ensure DOM is fully rendered
+            setTimeout(() => {
+                this._setupTemplateCommand();
+            }, 100);
         });
 
         onWillUnmount(() => {
@@ -28,32 +37,49 @@ patch(Composer.prototype, {
     },
 
     _setupTemplateCommand() {
-        // Get the textarea element
-        console.log("[WhatsApp Templates] Looking for textarea...", this.composerRef);
-        const textarea = this.composerRef?.el?.querySelector("textarea");
-        console.log("[WhatsApp Templates] Textarea found:", textarea);
+        // Try multiple methods to find textarea
+        console.log("[WhatsApp Templates] Looking for textarea...");
+        console.log("[WhatsApp Templates] rootRef:", this.rootRef);
+
+        let textarea = null;
+
+        // Method 1: Try from rootRef
+        if (this.rootRef?.el) {
+            textarea = this.rootRef.el.querySelector("textarea");
+            console.log("[WhatsApp Templates] Method 1 (rootRef):", textarea);
+        }
+
+        // Method 2: Try from composerRef if exists
+        if (!textarea && this.composerRef?.el) {
+            textarea = this.composerRef.el.querySelector("textarea");
+            console.log("[WhatsApp Templates] Method 2 (composerRef):", textarea);
+        }
+
+        // Method 3: Try direct querySelector from component root
+        if (!textarea && this.__owl__?.bdom?.el) {
+            textarea = this.__owl__.bdom.el.querySelector("textarea");
+            console.log("[WhatsApp Templates] Method 3 (__owl__):", textarea);
+        }
 
         if (!textarea) {
-            console.warn("[WhatsApp Templates] Textarea not found!");
+            console.warn("[WhatsApp Templates] Textarea not found! Will retry on next mount.");
             return;
         }
 
-        // Store original handlers
-        this._originalKeyDown = textarea.onkeydown;
-        this._originalInput = textarea.oninput;
+        this._textareaElement = textarea;
 
         // Add our handlers
-        textarea.addEventListener("keydown", this._onTemplateKeyDown.bind(this));
-        textarea.addEventListener("input", this._onTemplateInput.bind(this));
-        console.log("[WhatsApp Templates] Event listeners attached successfully!");
+        textarea.addEventListener("keydown", this._boundKeyDown);
+        textarea.addEventListener("input", this._boundInput);
+        console.log("[WhatsApp Templates] Event listeners attached successfully to:", textarea);
     },
 
     _cleanupTemplateCommand() {
-        const textarea = this.composerRef?.el?.querySelector("textarea");
-        if (!textarea) return;
-
-        textarea.removeEventListener("keydown", this._onTemplateKeyDown.bind(this));
-        textarea.removeEventListener("input", this._onTemplateInput.bind(this));
+        if (this._textareaElement) {
+            this._textareaElement.removeEventListener("keydown", this._boundKeyDown);
+            this._textareaElement.removeEventListener("input", this._boundInput);
+            this._textareaElement = null;
+        }
     },
 
     async _onTemplateInput(ev) {
