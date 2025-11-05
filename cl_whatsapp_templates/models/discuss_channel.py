@@ -19,6 +19,76 @@ class DiscussChannel(models.Model):
         """
         return self.env['discuss.template'].get_templates_for_picker(category)
 
+    @api.model
+    def search_templates_by_command(self, command):
+        """Search templates by slash command
+
+        Args:
+            command: Command string (e.g., 'halo', 'greeting')
+
+        Returns:
+            list: Matching templates with preview
+        """
+        if not command:
+            # Return all active templates
+            domain = [('active', '=', True)]
+        else:
+            # Search by shortcut or name
+            command_lower = command.lower()
+            domain = [
+                ('active', '=', True),
+                '|', '|',
+                ('shortcut', 'ilike', '/' + command_lower),
+                ('name', 'ilike', command_lower),
+                ('description', 'ilike', command_lower),
+            ]
+
+        templates = self.env['discuss.template'].search(domain, limit=10, order='sequence, name')
+
+        result = []
+        for template in templates:
+            result.append({
+                'id': template.id,
+                'name': template.name,
+                'shortcut': template.shortcut,
+                'description': template.description,
+                'content': template.content[:100] + '...' if len(template.content) > 100 else template.content,
+                'category': template.category,
+            })
+
+        return result
+
+    def get_template_content_for_channel(self, template_id):
+        """Get template content with placeholders replaced for current channel
+
+        Args:
+            template_id: ID of template
+
+        Returns:
+            dict: Template content with replacements applied
+        """
+        self.ensure_one()
+        template = self.env['discuss.template'].browse(template_id)
+
+        if not template.exists():
+            return {'error': 'Template not found'}
+
+        # Get partner from channel
+        partner = None
+        if self.channel_type == 'whatsapp' and self.whatsapp_number:
+            partner = self._find_partner_by_phone(self.whatsapp_number)
+
+        # Apply placeholders
+        content = template.apply_placeholders(partner)
+
+        # Increment usage counter
+        template.action_use_template()
+
+        return {
+            'content': content,
+            'template_name': template.name,
+        }
+
     def action_insert_template(self, template_id, partner_id=None):
         """Insert a template into the message composer
 

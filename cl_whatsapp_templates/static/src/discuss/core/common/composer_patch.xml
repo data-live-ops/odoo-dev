@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="cl_whatsapp_templates.Composer" t-inherit="mail.Composer" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o-mail-Composer')]" position="inside">
+            <div t-if="templateState.showSuggestions" class="o_template_suggestions">
+                <div class="o_template_suggestions_list">
+                    <t t-foreach="templateState.suggestions" t-as="suggestion" t-key="suggestion.id">
+                        <div
+                            class="o_template_suggestion_item"
+                            t-att-class="{
+                                'o_template_suggestion_selected': suggestion_index === templateState.selectedIndex
+                            }"
+                            t-on-click="() => this._insertTemplate(suggestion)"
+                            t-on-mouseenter="() => { this.templateState.selectedIndex = suggestion_index; }"
+                        >
+                            <div class="o_template_suggestion_header">
+                                <span class="o_template_suggestion_name" t-esc="suggestion.name"/>
+                                <span t-if="suggestion.shortcut" class="o_template_suggestion_shortcut" t-esc="suggestion.shortcut"/>
+                            </div>
+                            <div t-if="suggestion.description" class="o_template_suggestion_description" t-esc="suggestion.description"/>
+                            <div class="o_template_suggestion_preview" t-esc="suggestion.content"/>
+                        </div>
+                    </t>
+                </div>
+                <div class="o_template_suggestions_footer">
+                    <small class="text-muted">
+                        <i class="fa fa-arrow-up"/> <i class="fa fa-arrow-down"/> to navigate,
+                        <i class="fa fa-level-down"/> to select,
+                        <i class="fa fa-times"/> to cancel
+                    </small>
+                </div>
+            </div>
+        </xpath>
+    </t>
+</templates>
