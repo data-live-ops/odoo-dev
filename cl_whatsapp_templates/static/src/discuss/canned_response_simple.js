@@ -19,7 +19,13 @@ patch(Composer.prototype, {
                     console.log("[Canned Response Render] Insert intercepted:", option);
 
                     if (option.cannedResponse && option.label && option.label.includes('[')) {
-                        const channelId = this.props.thread?.id;
+                        // Try multiple ways to get thread/channel ID
+                        const channelId = this.thread?.id || this.props.thread?.id || this.composer?.thread?.id;
+
+                        console.log("[Canned Response Render] Debug - this.thread:", this.thread);
+                        console.log("[Canned Response Render] Debug - this.props.thread:", this.props.thread);
+                        console.log("[Canned Response Render] Debug - channelId:", channelId);
+
                         try {
                             console.log("[Canned Response Render] Calling RPC for channel:", channelId);
 
@@ -59,7 +65,9 @@ patch(Composer.prototype, {
         const originalInsert = this.suggestion.insert.bind(this.suggestion);
         this.suggestion.insert = async (option) => {
             if (option.cannedResponse && option.label && option.label.includes('[')) {
-                const channelId = this.props.thread?.id;
+                // Try multiple ways to get thread/channel ID
+                const channelId = this.thread?.id || this.props.thread?.id || this.composer?.thread?.id;
+
                 try {
                     const rendered = await this.orm.call(
                         "mail.canned.response",

@@ -27,6 +27,9 @@ class MailCannedResponse(models.Model):
         self.ensure_one()
         substitution = self.substitution or ''
 
+        _logger.info(f"[Canned Response] render_substitution called for canned_response {self.id}, channel_id: {channel_id}")
+        _logger.info(f"[Canned Response] Original substitution: {substitution}")
+
         # Check if there are any placeholders
         if '[' not in substitution:
             return substitution
@@ -36,11 +39,13 @@ class MailCannedResponse(models.Model):
 
         # Company name (always available)
         replacements['[COMPANY]'] = self.env.company.name or ''
+        _logger.info(f"[Canned Response] [COMPANY] = {replacements['[COMPANY]']}")
 
-        # Current user
+        # Current user (the logged in user, NOT the customer)
         replacements['[USER]'] = self.env.user.name or ''
+        _logger.info(f"[Canned Response] [USER] = {replacements['[USER]']} (user ID: {self.env.user.id})")
 
-        # Partner info from channel
+        # Partner info from channel (this is the CUSTOMER)
         if channel_id:
             channel = self.env['discuss.channel'].browse(channel_id)
             if channel.exists():
@@ -50,11 +55,19 @@ class MailCannedResponse(models.Model):
                     replacements['[NAME]'] = partner.name or ''
                     replacements['[PHONE]'] = partner.mobile or partner.phone or ''
                     replacements['[EMAIL]'] = partner.email or ''
-                    _logger.info(f"[Canned Response] Rendering for partner: {partner.name}")
+                    _logger.info(f"[Canned Response] [NAME] = {replacements['[NAME]']} (partner ID: {partner.id})")
+                    _logger.info(f"[Canned Response] [PHONE] = {replacements['[PHONE]']}")
+                    _logger.info(f"[Canned Response] [EMAIL] = {replacements['[EMAIL]']}")
+                else:
+                    _logger.warning(f"[Canned Response] No partner found for channel {channel_id}")
+        else:
+            _logger.warning(f"[Canned Response] No channel_id provided, skipping [NAME], [PHONE], [EMAIL]")
 
         # Replace all placeholders
         for placeholder, value in replacements.items():
             substitution = substitution.replace(placeholder, value)
+
+        _logger.info(f"[Canned Response] Final rendered: {substitution}")
 
         return substitution
 
