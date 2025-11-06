@@ -3,53 +3,56 @@
 import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
 
-const mailSlashCommandRegistry = registry.category("mail_slash_commands");
+console.log("[WhatsApp Templates] Module loading...");
 
-// Function to load and register all template commands
-async function registerTemplateCommands() {
-    try {
-        // Fetch all templates from backend
-        const templates = await rpc("/web/dataset/call_kw", {
-            model: "discuss.channel",
-            method: "search_templates_by_command",
-            args: [""], // Empty string returns all templates
-            kwargs: {}
-        });
+// Try to get mail_slash_commands registry
+try {
+    const mailSlashCommandRegistry = registry.category("mail_slash_commands");
+    console.log("[WhatsApp Templates] Mail slash command registry found:", mailSlashCommandRegistry);
 
-        console.log("[WhatsApp Templates] Registering slash commands:", templates);
+    // Load templates and register commands immediately
+    (async () => {
+        try {
+            console.log("[WhatsApp Templates] Fetching templates...");
 
-        // Register each template as a slash command
-        templates.forEach(template => {
-            if (!template.shortcut) return;
-
-            const commandName = template.shortcut.replace('/', '');
-
-            mailSlashCommandRegistry.add(commandName, {
-                name: template.shortcut,
-                description: template.description || template.name,
-
-                // This function is called when command is selected
-                execute: async (channel, body) => {
-                    console.log(`[WhatsApp Templates] Executing ${commandName} for channel ${channel.id}`);
-
-                    // Send the command to server for processing
-                    // The server will handle template insertion and placeholder replacement
-                    return {
-                        body: template.shortcut, // Send slash command to server
-                        template_id: template.id
-                    };
-                },
-
-                // Show command in all channels/chats
-                isAvailable: (channel) => true,
+            // Fetch templates from backend
+            const templates = await rpc("/web/dataset/call_kw/discuss.channel/search_templates_by_command", {
+                model: "discuss.channel",
+                method: "search_templates_by_command",
+                args: [""],
+                kwargs: {},
             });
-        });
 
-        console.log(`[WhatsApp Templates] Registered ${templates.length} slash commands`);
-    } catch (error) {
-        console.error("[WhatsApp Templates] Failed to register commands:", error);
-    }
+            console.log(`[WhatsApp Templates] Fetched ${templates.length} templates:`, templates);
+
+            // Register each template as slash command
+            templates.forEach((template) => {
+                if (!template.shortcut) {
+                    console.warn(`[WhatsApp Templates] Template ${template.name} has no shortcut, skipping`);
+                    return;
+                }
+
+                const commandName = template.shortcut.replace("/", "");
+                console.log(`[WhatsApp Templates] Registering command: ${commandName}`);
+
+                mailSlashCommandRegistry.add(commandName, {
+                    name: template.shortcut,
+                    description: template.description || template.name,
+                    isAvailable: () => true, // Show in all contexts
+                });
+
+                console.log(`[WhatsApp Templates] ✓ Registered: ${template.shortcut}`);
+            });
+
+            console.log(`[WhatsApp Templates] Successfully registered ${templates.length} commands`);
+        } catch (error) {
+            console.error("[WhatsApp Templates] Error loading templates:", error);
+        }
+    })();
+
+} catch (error) {
+    console.error("[WhatsApp Templates] mail_slash_commands registry not found:", error);
+    console.log("[WhatsApp Templates] Available registries:", Array.from(registry.categories.keys()));
 }
 
-// Register commands when module loads
-registerTemplateCommands();
+console.log("[WhatsApp Templates] Module loaded");
