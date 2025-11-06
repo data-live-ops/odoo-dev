@@ -146,9 +146,22 @@ class MailCannedResponse(models.Model):
         Returns:
             res.partner or False
         """
+        _logger.info(f"[Canned Response] Finding partner for channel {channel.id} (type: {channel.channel_type})")
+
         # For WhatsApp channels
-        if channel.channel_type == 'whatsapp' and channel.whatsapp_number:
-            return channel._find_partner_by_phone(channel.whatsapp_number)
+        if channel.channel_type == 'whatsapp':
+            whatsapp_number = channel.whatsapp_number
+            _logger.info(f"[Canned Response] WhatsApp number: {whatsapp_number}")
+
+            if whatsapp_number:
+                partner = channel._find_partner_by_phone(whatsapp_number)
+                if partner:
+                    _logger.info(f"[Canned Response] Found partner via phone: {partner.name} (ID: {partner.id})")
+                    return partner
+                else:
+                    _logger.warning(f"[Canned Response] No partner found for WhatsApp number: {whatsapp_number}")
+            else:
+                _logger.warning(f"[Canned Response] WhatsApp channel has no whatsapp_number field")
 
         # For direct message channels
         if channel.channel_type == 'chat':
@@ -157,7 +170,9 @@ class MailCannedResponse(models.Model):
                 lambda m: m.partner_id.id != self.env.user.partner_id.id
             )
             if other_members:
-                return other_members[0].partner_id
+                partner = other_members[0].partner_id
+                _logger.info(f"[Canned Response] Found partner from chat: {partner.name} (ID: {partner.id})")
+                return partner
 
         # For group channels, try to get from channel_partner_ids
         if channel.channel_partner_ids:
@@ -166,6 +181,9 @@ class MailCannedResponse(models.Model):
                 lambda p: p.id != self.env.user.partner_id.id
             )
             if partners:
-                return partners[0]
+                partner = partners[0]
+                _logger.info(f"[Canned Response] Found partner from group: {partner.name} (ID: {partner.id})")
+                return partner
 
+        _logger.warning(f"[Canned Response] No partner found for channel {channel.id}")
         return False

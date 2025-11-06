@@ -152,11 +152,15 @@ class DiscussChannel(models.Model):
             res.partner: Partner record or False
         """
         if not phone:
+            _logger.warning(f"[Partner Lookup] No phone number provided")
             return False
 
         phone_clean = str(phone).replace('+', '').replace(' ', '').replace('-', '')
         last_10 = phone_clean[-10:] if len(phone_clean) >= 10 else phone_clean
 
+        _logger.info(f"[Partner Lookup] Searching for phone: {phone} (cleaned: {phone_clean})")
+
+        # Search with flexible matching
         partner = self.env['res.partner'].search([
             '|', '|', '|',
             ('mobile', '=', phone_clean),
@@ -165,6 +169,11 @@ class DiscussChannel(models.Model):
             ('mobile', 'like', '%' + last_10),
             ('active', '=', True)
         ], limit=1, order='write_date desc')
+
+        if partner:
+            _logger.info(f"[Partner Lookup] Found partner: {partner.name} (ID: {partner.id}, mobile: {partner.mobile})")
+        else:
+            _logger.warning(f"[Partner Lookup] No partner found for phone: {phone_clean}")
 
         return partner
 
