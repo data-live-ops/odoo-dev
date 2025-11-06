@@ -1,16 +1,16 @@
 /** @odoo-module **/
 
-import { useSuggestion } from "@mail/core/common/suggestion_hook";
+import { UseSuggestion } from "@mail/core/common/suggestion_hook";
 import { patch } from "@web/core/utils/patch";
 
-console.log("[Canned Response Render] Patching suggestion hook for placeholder rendering");
+console.log("[Canned Response Render] Patching UseSuggestion class for placeholder rendering");
 
-patch(useSuggestion.prototype, {
+patch(UseSuggestion.prototype, {
     /**
      * Override insert to render placeholders before insertion
      */
     async insert(option) {
-        console.log("[Canned Response Render] Inserting:", option);
+        console.log("[Canned Response Render] Inserting option:", option);
 
         // Check if this is a canned response with placeholders
         if (option.cannedResponse && option.label && option.label.includes('[')) {
@@ -19,7 +19,6 @@ patch(useSuggestion.prototype, {
             try {
                 // Get channel ID
                 const channelId = this.thread?.id;
-
                 console.log("[Canned Response Render] Rendering for channel:", channelId);
 
                 // Call backend to render placeholders
@@ -30,7 +29,7 @@ patch(useSuggestion.prototype, {
                     { channel_id: channelId }
                 );
 
-                console.log("[Canned Response Render] Rendered text:", rendered.substring(0, 50) + "...");
+                console.log("[Canned Response Render] Rendered text:", rendered.substring(0, 100));
 
                 // Replace label with rendered text
                 option.label = rendered;
@@ -41,7 +40,7 @@ patch(useSuggestion.prototype, {
         }
 
         // Call parent insert
-        super.insert(option);
+        return super.insert(option);
     },
 });
 
