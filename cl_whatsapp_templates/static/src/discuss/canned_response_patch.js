@@ -22,9 +22,15 @@ patch(SuggestionService.prototype, {
         }
 
         // Get canned responses from store
-        const cannedResponses = this.store.CannedResponse.records;
+        const cannedResponseStore = this.store["mail.canned.response"];
+        if (!cannedResponseStore || !cannedResponseStore.records) {
+            console.log("[Canned Response Variables] No canned response store found");
+            return;
+        }
 
-        if (!cannedResponses || cannedResponses.length === 0) {
+        const cannedResponses = Object.values(cannedResponseStore.records);
+
+        if (cannedResponses.length === 0) {
             console.log("[Canned Response Variables] No canned responses found");
             return;
         }
