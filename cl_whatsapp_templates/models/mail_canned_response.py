@@ -8,6 +8,56 @@ _logger = logging.getLogger(__name__)
 class MailCannedResponse(models.Model):
     _inherit = 'mail.canned.response'
 
+    def render_substitution(self, channel_id=None):
+        """Render substitution with placeholders replaced
+
+        Supported placeholders:
+        [NAME] - Partner/Contact name
+        [COMPANY] - Company name
+        [PHONE] - Partner phone
+        [EMAIL] - Partner email
+        [USER] - Current user name
+
+        Args:
+            channel_id: discuss.channel ID for context
+
+        Returns:
+            str: Rendered substitution text
+        """
+        self.ensure_one()
+        substitution = self.substitution or ''
+
+        # Check if there are any placeholders
+        if '[' not in substitution:
+            return substitution
+
+        # Get replacement values
+        replacements = {}
+
+        # Company name (always available)
+        replacements['[COMPANY]'] = self.env.company.name or ''
+
+        # Current user
+        replacements['[USER]'] = self.env.user.name or ''
+
+        # Partner info from channel
+        if channel_id:
+            channel = self.env['discuss.channel'].browse(channel_id)
+            if channel.exists():
+                partner = self._find_partner_from_channel(channel)
+
+                if partner:
+                    replacements['[NAME]'] = partner.name or ''
+                    replacements['[PHONE]'] = partner.mobile or partner.phone or ''
+                    replacements['[EMAIL]'] = partner.email or ''
+                    _logger.info(f"[Canned Response] Rendering for partner: {partner.name}")
+
+        # Replace all placeholders
+        for placeholder, value in replacements.items():
+            substitution = substitution.replace(placeholder, value)
+
+        return substitution
+
     @api.model
     def _get_substitution_with_variables(self, canned_response_id, channel_id=None):
         """Get substitution text with variables replaced

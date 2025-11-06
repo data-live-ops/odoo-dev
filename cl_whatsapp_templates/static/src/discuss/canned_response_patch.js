@@ -1,76 +1,48 @@
 /** @odoo-module **/
 
-import { SuggestionService } from "@mail/core/common/suggestion_service";
+import { useSuggestion } from "@mail/core/common/suggestion_hook";
 import { patch } from "@web/core/utils/patch";
-import { rpc } from "@web/core/network/rpc";
 
-console.log("[Canned Response Variables] Patching SuggestionService for variable support");
+console.log("[Canned Response Render] Patching suggestion hook for placeholder rendering");
 
-patch(SuggestionService.prototype, {
+patch(useSuggestion.prototype, {
     /**
-     * Override to add variable replacement for canned responses
+     * Override insert to render placeholders before insertion
      */
-    async fetchSuggestions(search, { thread, abortSignal }) {
-        console.log("[Canned Response Variables] Fetching suggestions for:", search.delimiter);
+    async insert(option) {
+        console.log("[Canned Response Render] Inserting:", option);
 
-        // Call parent method first
-        await super.fetchSuggestions(search, { thread, abortSignal });
+        // Check if this is a canned response with placeholders
+        if (option.cannedResponse && option.label && option.label.includes('[')) {
+            console.log("[Canned Response Render] Found placeholders in:", option.cannedResponse.source);
 
-        // Only process canned responses
-        if (search.delimiter !== ":") {
-            return;
-        }
-
-        // Get canned responses from store
-        const cannedResponseStore = this.store["mail.canned.response"];
-        if (!cannedResponseStore || !cannedResponseStore.records) {
-            console.log("[Canned Response Variables] No canned response store found");
-            return;
-        }
-
-        const cannedResponses = Object.values(cannedResponseStore.records);
-
-        if (cannedResponses.length === 0) {
-            console.log("[Canned Response Variables] No canned responses found");
-            return;
-        }
-
-        console.log(`[Canned Response Variables] Processing ${cannedResponses.length} canned responses`);
-
-        // Replace variables in each canned response substitution
-        for (const cannedResponse of cannedResponses) {
             try {
-                // Check if substitution contains variables
-                if (!cannedResponse.substitution.includes('{{')) {
-                    continue;
-                }
-
-                console.log(`[Canned Response Variables] Found variables in: ${cannedResponse.source}`);
-
                 // Get channel ID
-                const channelId = thread?.id;
+                const channelId = this.thread?.id;
 
-                // Call backend to replace variables
-                const result = await rpc("/web/dataset/call_kw/mail.canned.response/_get_substitution_with_variables", {
-                    model: "mail.canned.response",
-                    method: "_get_substitution_with_variables",
-                    args: [cannedResponse.id, channelId],
-                    kwargs: {},
-                }, { signal: abortSignal });
+                console.log("[Canned Response Render] Rendering for channel:", channelId);
 
-                // Update substitution in store
-                cannedResponse.substitution = result;
+                // Call backend to render placeholders
+                const rendered = await this.env.services.orm.call(
+                    "mail.canned.response",
+                    "render_substitution",
+                    [option.cannedResponse.id],
+                    { channel_id: channelId }
+                );
 
-                console.log(`[Canned Response Variables] ✓ Replaced variables in ${cannedResponse.source}`);
+                console.log("[Canned Response Render] Rendered text:", rendered.substring(0, 50) + "...");
+
+                // Replace label with rendered text
+                option.label = rendered;
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    throw error;
-                }
-                console.error(`[Canned Response Variables] Error processing ${cannedResponse.source}:`, error);
-                // Keep original substitution on error
+                console.error("[Canned Response Render] Error rendering:", error);
+                // Continue with original label on error
             }
         }
+
+        // Call parent insert
+        super.insert(option);
     },
 });
 
-console.log("[Canned Response Variables] Patch applied successfully");
+console.log("[Canned Response Render] Patch applied successfully");
