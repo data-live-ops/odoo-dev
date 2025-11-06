@@ -2,60 +2,78 @@
 
 import { Composer } from "@mail/core/common/composer";
 import { patch } from "@web/core/utils/patch";
-
-console.log("[Canned Response Render] Patching Composer for placeholder rendering");
-
-// Store original suggestion insert handler
-const originalSuggestionPropsGetter = Composer.prototype.suggestionProps;
+import { useService } from "@web/core/utils/hooks";
+import { onMounted } from "@odoo/owl";
 
 patch(Composer.prototype, {
-    /**
-     * Patch suggestionProps to wrap onSelect handler
-     */
-    get suggestionProps() {
-        const props = originalSuggestionPropsGetter?.call(this) || super.suggestionProps;
+    setup() {
+        super.setup(...arguments);
+        this.orm = useService("orm");
+        console.log("[Canned Response Render] Patching Composer for placeholder rendering ✅");
 
-        if (!props || !props.onSelect) {
-            return props;
+        onMounted(() => {
+            // Wrap the suggestion insert handler post-mount
+            if (this.suggestion && this.suggestion.insert) {
+                const originalInsert = this.suggestion.insert.bind(this.suggestion);
+                this.suggestion.insert = async (option) => {
+                    console.log("[Canned Response Render] Insert intercepted:", option);
+
+                    if (option.cannedResponse && option.label && option.label.includes('[')) {
+                        const channelId = this.props.thread?.id;
+                        try {
+                            console.log("[Canned Response Render] Calling RPC for channel:", channelId);
+
+                            const rendered = await this.orm.call(
+                                "mail.canned.response",
+                                "render_substitution",
+                                [option.cannedResponse.id],
+                                { channel_id: channelId }
+                            );
+
+                            console.log("[Canned Response Render] RPC rendered:", rendered.substring(0, 100));
+                            option.label = rendered;  // Update label for insertion
+                        } catch (error) {
+                            console.error("[Canned Response Render] RPC error:", error);
+                            // Fallback: insert original
+                        }
+                    }
+
+                    // Call original to perform insertion
+                    return originalInsert(option);
+                };
+                console.log("[Canned Response Render] Insert wrapper applied ✅");
+            } else {
+                console.warn("[Canned Response Render] Suggestion hook not ready—retrying on next mount");
+                // Self-heal: Re-apply on re-mount (e.g., thread switch)
+                setTimeout(() => this.setupSuggestionsWrapper(), 0);
+            }
+        });
+    },
+
+    setupSuggestionsWrapper() {
+        // Helper for re-mounts
+        if (!this.suggestion || !this.suggestion.insert) {
+            return;
         }
 
-        // Store original onSelect
-        const originalOnSelect = props.onSelect;
-
-        // Wrap onSelect to render placeholders
-        props.onSelect = async (ev, option) => {
-            console.log("[Canned Response Render] onSelect called with:", option);
-
-            // Check if this is canned response with placeholders
+        const originalInsert = this.suggestion.insert.bind(this.suggestion);
+        this.suggestion.insert = async (option) => {
             if (option.cannedResponse && option.label && option.label.includes('[')) {
-                console.log("[Canned Response Render] Found placeholders, rendering...");
-
+                const channelId = this.props.thread?.id;
                 try {
-                    // Get channel ID
-                    const channelId = this.props.thread?.id;
-
-                    // Call backend to render
                     const rendered = await this.orm.call(
                         "mail.canned.response",
                         "render_substitution",
                         [option.cannedResponse.id],
                         { channel_id: channelId }
                     );
-
-                    console.log("[Canned Response Render] Rendered:", rendered.substring(0, 100));
-
-                    // Replace label
                     option.label = rendered;
                 } catch (error) {
-                    console.error("[Canned Response Render] Error:", error);
+                    console.error("[Canned Response Render] RPC error:", error);
                 }
             }
-
-            // Call original handler
-            return originalOnSelect(ev, option);
+            return originalInsert(option);
         };
-
-        return props;
     },
 });
 
