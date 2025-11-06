@@ -1,5 +1,6 @@
-from odoo import models, api
+from odoo import models, api, _
 import logging
+import re
 
 _logger = logging.getLogger(__name__)
 
@@ -166,3 +167,64 @@ class DiscussChannel(models.Model):
         ], limit=1, order='write_date desc')
 
         return partner
+
+    def _process_command_slash(self, command, message_values):
+        """Override to handle template slash commands
+
+        Args:
+            command: Command name (e.g., 'halo' from '/halo')
+            message_values: Message dict with body, etc.
+
+        Returns:
+            bool: True if command was handled, False otherwise
+        """
+        # Call parent method first for built-in commands
+        result = super()._process_command_slash(command, message_values)
+        if result:
+            return result
+
+        # Check if this is a template command
+        template = self.env['discuss.template'].search([
+            ('shortcut', '=', '/' + command),
+            ('active', '=', True)
+        ], limit=1)
+
+        if template:
+            _logger.info(f"[WhatsApp Templates] Processing command /{command} -> template {template.name}")
+            return self._execute_template_command(template)
+
+        return False
+
+    def _execute_template_command(self, template):
+        """Execute a template command - insert template into channel
+
+        Args:
+            template: discuss.template record
+
+        Returns:
+            dict: Message values to post or False
+        """
+        self.ensure_one()
+
+        # Get partner from channel for personalization
+        partner = None
+        if self.channel_type == 'whatsapp' and self.whatsapp_number:
+            partner = self._find_partner_by_phone(self.whatsapp_number)
+            if partner:
+                _logger.info(f"[WhatsApp Templates] Partner found for personalization: {partner.name}")
+
+        # Apply placeholders
+        content = template.apply_placeholders(partner)
+
+        # Increment usage counter
+        template.action_use_template()
+
+        # Post message to channel
+        self.message_post(
+            body=content,
+            message_type='comment',
+            subtype_xmlid='mail.mt_comment'
+        )
+
+        _logger.info(f"[WhatsApp Templates] Template {template.name} posted to channel {self.id}")
+        return True
