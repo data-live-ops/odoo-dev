@@ -26,7 +26,7 @@
     ],
     'assets': {
         'web.assets_backend': [
-            'cl_whatsapp_templates/static/src/discuss/canned_response_patch.js',
+            'cl_whatsapp_templates/static/src/discuss/canned_response_simple.js',
         ],
     },
     'installable': True,
