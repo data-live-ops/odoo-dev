@@ -54,10 +54,8 @@ patch(SuggestionService.prototype, {
                 const result = await rpc("/web/dataset/call_kw/mail.canned.response/_get_substitution_with_variables", {
                     model: "mail.canned.response",
                     method: "_get_substitution_with_variables",
-                    args: [cannedResponse.id],
-                    kwargs: {
-                        channel_id: channelId
-                    },
+                    args: [cannedResponse.id, channelId],
+                    kwargs: {},
                 }, { signal: abortSignal });
 
                 // Update substitution in store

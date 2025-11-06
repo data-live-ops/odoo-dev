@@ -8,20 +8,25 @@ _logger = logging.getLogger(__name__)
 class MailCannedResponse(models.Model):
     _inherit = 'mail.canned.response'
 
-    def _get_substitution_with_variables(self, channel_id=None):
+    @api.model
+    def _get_substitution_with_variables(self, canned_response_id, channel_id=None):
         """Get substitution text with variables replaced
 
         Variables format: {{1}}, {{2}}, {{3}}, etc.
         Maps to: partner_name, company_name, partner_phone, etc.
 
         Args:
+            canned_response_id: ID of canned response
             channel_id: discuss.channel ID for context
 
         Returns:
             str: Substitution text with variables replaced
         """
-        self.ensure_one()
-        substitution = self.substitution or ''
+        canned_response = self.browse(canned_response_id)
+        if not canned_response.exists():
+            return ''
+
+        substitution = canned_response.substitution or ''
 
         # Find all {{N}} patterns
         variable_pattern = re.findall(r'{{(\d+)}}', substitution)
