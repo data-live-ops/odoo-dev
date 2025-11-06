@@ -1,61 +1,69 @@
 /** @odoo-module **/
 
-import { Composer } from "@mail/core/common/composer";
+import { SuggestionService } from "@mail/core/common/suggestion_service";
 import { patch } from "@web/core/utils/patch";
+import { rpc } from "@web/core/network/rpc";
 
-console.log("[Canned Response Variables] Patching Composer for variable support");
+console.log("[Canned Response Variables] Patching SuggestionService for variable support");
 
-patch(Composer.prototype, {
-    setup() {
-        super.setup(...arguments);
-        console.log("[Canned Response Variables] Composer patched");
-    },
-
+patch(SuggestionService.prototype, {
     /**
      * Override to add variable replacement for canned responses
      */
-    async onClickCannedResponse(cannedResponse) {
-        console.log("[Canned Response Variables] Canned response clicked:", cannedResponse);
+    async fetchSuggestions(search, { thread, abortSignal }) {
+        console.log("[Canned Response Variables] Fetching suggestions for:", search.delimiter);
 
-        try {
-            // Get channel ID for context
-            const channelId = this.props.thread?.id;
-            console.log("[Canned Response Variables] Channel ID:", channelId);
+        // Call parent method first
+        await super.fetchSuggestions(search, { thread, abortSignal });
 
-            // Call backend to get substitution with variables replaced
-            const result = await this.orm.call(
-                "mail.canned.response",
-                "_get_substitution_with_variables",
-                [cannedResponse.id],
-                { channel_id: channelId }
-            );
+        // Only process canned responses
+        if (search.delimiter !== ":") {
+            return;
+        }
 
-            console.log("[Canned Response Variables] Substitution with variables:", result);
+        // Get canned responses from store
+        const cannedResponses = this.store.CannedResponse.records;
 
-            // Insert into composer
-            if (this.props.composer) {
-                // Replace current text with canned response
-                const currentText = this.props.composer.text || "";
+        if (!cannedResponses || cannedResponses.length === 0) {
+            console.log("[Canned Response Variables] No canned responses found");
+            return;
+        }
 
-                // If text ends with shortcut (e.g., ":hello"), remove it
-                const shortcutPattern = new RegExp(`:${cannedResponse.source}$`);
-                const newText = currentText.replace(shortcutPattern, result);
+        console.log(`[Canned Response Variables] Processing ${cannedResponses.length} canned responses`);
 
-                this.props.composer.text = newText;
-            }
+        // Replace variables in each canned response substitution
+        for (const cannedResponse of cannedResponses) {
+            try {
+                // Check if substitution contains variables
+                if (!cannedResponse.substitution.includes('{{')) {
+                    continue;
+                }
 
-            // Update last_used
-            await this.orm.write("mail.canned.response", [cannedResponse.id], {
-                last_used: new Date().toISOString()
-            });
+                console.log(`[Canned Response Variables] Found variables in: ${cannedResponse.source}`);
 
-            console.log("[Canned Response Variables] Canned response inserted successfully");
-        } catch (error) {
-            console.error("[Canned Response Variables] Error:", error);
+                // Get channel ID
+                const channelId = thread?.id;
 
-            // Fallback to original behavior
-            if (super.onClickCannedResponse) {
-                await super.onClickCannedResponse(cannedResponse);
+                // Call backend to replace variables
+                const result = await rpc("/web/dataset/call_kw/mail.canned.response/_get_substitution_with_variables", {
+                    model: "mail.canned.response",
+                    method: "_get_substitution_with_variables",
+                    args: [cannedResponse.id],
+                    kwargs: {
+                        channel_id: channelId
+                    },
+                }, { signal: abortSignal });
+
+                // Update substitution in store
+                cannedResponse.substitution = result;
+
+                console.log(`[Canned Response Variables] ✓ Replaced variables in ${cannedResponse.source}`);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    throw error;
+                }
+                console.error(`[Canned Response Variables] Error processing ${cannedResponse.source}:`, error);
+                // Keep original substitution on error
             }
         }
     },
