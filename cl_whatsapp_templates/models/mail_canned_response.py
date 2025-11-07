@@ -59,7 +59,11 @@ class MailCannedResponse(models.Model):
                     _logger.info(f"[Canned Response] [PHONE] = {replacements['[PHONE]']}")
                     _logger.info(f"[Canned Response] [EMAIL] = {replacements['[EMAIL]']}")
                 else:
-                    _logger.warning(f"[Canned Response] No partner found for channel {channel_id}")
+                    # Fallback: Use channel display name if partner not found
+                    replacements['[NAME]'] = channel.name or ''
+                    _logger.warning(f"[Canned Response] No partner found, using channel name: {channel.name}")
+            else:
+                _logger.warning(f"[Canned Response] Channel {channel_id} not found")
         else:
             _logger.warning(f"[Canned Response] No channel_id provided, skipping [NAME], [PHONE], [EMAIL]")
 
