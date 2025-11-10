@@ -14,6 +14,19 @@ class ResPartner(models.Model):
     is_student = fields.Boolean(string='Is Student', default=False)
     is_parent = fields.Boolean(string='Is Parent', default=False)
 
+    @api.onchange('contact_type')
+    def _onchange_contact_type(self):
+        """Auto-set is_student and is_parent based on contact_type"""
+        if self.contact_type == 'student':
+            self.is_student = True
+            self.is_parent = False
+        elif self.contact_type == 'parent':
+            self.is_parent = True
+            self.is_student = False
+        else:
+            self.is_student = False
+            self.is_parent = False
+
     # Fields to store Metabase IDs
     metabase_sync_log_id = fields.Many2one(
         "metabase.sync.log", string="Metabase Sync Log", tracking=True
