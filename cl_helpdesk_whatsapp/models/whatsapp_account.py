@@ -43,11 +43,49 @@ class WhatsAppAccount(models.Model):
 
         return result
 
+    def _normalize_phone_number(self, phone):
+        """
+        Normalize phone number to standard formats for matching
+        Removes +, spaces, dashes and handles Indonesian format
+
+        Returns list of possible formats:
+        - 628xxx (WhatsApp format)
+        - 08xxx (local format)
+        - +628xxx (international format)
+        - 8xxx (without leading 0)
+        """
+        if not phone:
+            return []
+
+        # Clean phone number
+        cleaned = str(phone).replace('+', '').replace(' ', '').replace('-', '')
+
+        formats = [cleaned]  # Original cleaned format
+
+        # If starts with 628, add 08 and 8 variants
+        if cleaned.startswith('628'):
+            formats.append('0' + cleaned[2:])  # 08xxx
+            formats.append(cleaned[2:])        # 8xxx
+            formats.append('+' + cleaned)      # +628xxx
+        # If starts with 08, add 628 and 8 variants
+        elif cleaned.startswith('08'):
+            formats.append('628' + cleaned[1:])  # 628xxx
+            formats.append(cleaned[1:])          # 8xxx
+            formats.append('+628' + cleaned[1:]) # +628xxx
+        # If starts with 8 (no leading 0), add 08 and 628 variants
+        elif cleaned.startswith('8') and not cleaned.startswith('08'):
+            formats.append('0' + cleaned)      # 08xxx
+            formats.append('628' + cleaned)    # 628xxx
+            formats.append('+628' + cleaned)   # +628xxx
+
+        _logger.info(f"[Phone Normalize] Input: {phone} → Formats: {formats}")
+        return formats
+
     def auto_create_ticket_from_whatsapp(self, message_body, sender_mobile):
         """
         Auto-create a helpdesk ticket when receiving specific keyword.
         :param message_body: str, the WhatsApp message body
-        :param sender_mobile: str, the sender's phone number
+        :param sender_mobile: str, the sender's phone number (format: 628xxx from WhatsApp)
         :return: helpdesk.ticket record or None
         """
         template_id = self.env['whatsapp.template'].search([
@@ -64,29 +102,36 @@ class WhatsAppAccount(models.Model):
                     message_body.strip() != trigger_message:
                 return None  # Only trigger on exact message
 
-        phone_number = '+' + sender_mobile
-        # Search for partner by phone or mobile
-        partner = self.env['res.partner'].search([
-            ('mobile', '=', sender_mobile),
-        ], limit=1)
-        partner_formatted = self.env['res.partner'].search([
-            ('mobile', '=', phone_number),
-        ], limit=1)
+        # Normalize phone number to multiple formats for matching
+        phone_formats = self._normalize_phone_number(sender_mobile)
+
+        _logger.info(f"[Ticket Creation] Searching partner with phone formats: {phone_formats}")
+
+        # Search for partner by mobile using multiple formats
+        partner = False
+        for phone_format in phone_formats:
+            partner = self.env['res.partner'].search([
+                '|',
+                ('mobile', '=', phone_format),
+                ('phone', '=', phone_format),
+            ], limit=1)
+            if partner:
+                _logger.info(f"[Ticket Creation] Partner found with format: {phone_format}")
+                break
         # Check for existing open ticket for this partner or phone
         open_ticket_domain = [('stage_id.is_closed_stage', '=', False)]
         if partner:
             open_ticket_domain += [('partner_id', '=', partner.id)]
-        elif partner_formatted:
-            open_ticket_domain += [('partner_id', '=', partner_formatted.id)]
         else:
             open_ticket_domain += [('partner_phone', '=', sender_mobile)]
+
         open_ticket = self.env['helpdesk.ticket'].search(
             open_ticket_domain,
             limit=1,
         )
         if open_ticket:
             _logger.info(
-                "Skipping ticket creation: open ticket already exists for %s",
+                "[Ticket Creation] Skipping - open ticket already exists for %s",
                 partner and partner.name or sender_mobile
             )
             return None  # Skip ticket creation
@@ -96,27 +141,40 @@ class WhatsAppAccount(models.Model):
             'description': 'Ticket created from WhatsApp message.',
             'channel': 'whatsapp',
         }
+
         if partner:
+            student_phase = partner.metabase_student_phase or 'Not Set'
             _logger.info(
                 "[Ticket Creation] Partner found: %s (ID: %s, mobile: %s, phone: %s, student_phase: %s)",
-                partner.name, partner.id, partner.mobile, partner.phone,
-                partner.metabase_student_phase or 'Not Set'
+                partner.name, partner.id, partner.mobile, partner.phone, student_phase
             )
             ticket_vals['partner_id'] = partner.id
             ticket_vals['partner_phone'] = partner.phone or partner.mobile
-        elif partner_formatted:
-            _logger.info(
-                "[Ticket Creation] Partner formatted found: %s (ID: %s, mobile: %s, phone: %s, student_phase: %s)",
-                partner_formatted.name, partner_formatted.id, partner_formatted.mobile,
-                partner_formatted.phone, partner_formatted.metabase_student_phase or 'Not Set'
-            )
-            ticket_vals['partner_id'] = partner_formatted.id
-            ticket_vals['partner_phone'] = partner_formatted.phone or\
-                partner_formatted.mobile
+
+            # If partner has no student_phase, set it to non_paid
+            if not partner.metabase_student_phase:
+                _logger.warning(
+                    "[Ticket Creation] Partner %s has no student_phase, setting to 'non_paid'",
+                    partner.name
+                )
+                partner.write({'metabase_student_phase': 'non_paid'})
         else:
-            _logger.info("[Ticket Creation] Partner not found for phone: %s", sender_mobile)
-            # Save phone in description if no partner found
+            _logger.warning("[Ticket Creation] Partner not found for phone: %s, will default to non_paid", sender_mobile)
+            # Create partner with non_paid student_phase as default
+            partner = self.env['res.partner'].create({
+                'name': f'WhatsApp User {sender_mobile[-4:]}',
+                'mobile': sender_mobile,
+                'metabase_student_phase': 'non_paid',
+                'contact_type': 'student',
+                'is_student': True,
+            })
+            _logger.info(
+                "[Ticket Creation] Created new partner: %s (ID: %s) with student_phase: non_paid",
+                partner.name, partner.id
+            )
+            ticket_vals['partner_id'] = partner.id
             ticket_vals['partner_phone'] = sender_mobile
+
         ticket_vals['description'] += f"\nPhone: {sender_mobile}"
 
         _logger.info("[Ticket Creation] Creating ticket with values: %s", ticket_vals)
