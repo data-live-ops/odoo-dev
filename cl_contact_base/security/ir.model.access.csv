@@ -6,3 +6,6 @@ access_res_partner_sync_log_user,access.res.partner.sync.log.user,model_res_part
 access_res_partner_payment_recieved_user,access.res.partner.payment.recieved.user,model_res_partner_payment_recieved,base.group_user,1,1,1,1
 access_res_partner_payment_slot_selection_user,access.res.partner.payment.slot.selection.user,model_res_partner_payment_slot_selection,base.group_user,1,1,1,1
 access_res_partner_payment_paid_access_user,access.res.partner.payment.paid.access.user,model_res_partner_payment_paid_access,base.group_user,1,1,1,1
+access_contact_merge_wizard_user,access.contact.merge.wizard.user,model_contact_merge_wizard,base.group_user,1,1,1,1
+access_contact_merge_duplicate_group_user,access.contact.merge.duplicate.group.user,model_contact_merge_duplicate_group,base.group_user,1,1,1,1
+access_contact_merge_contact_line_user,access.contact.merge.contact.line.user,model_contact_merge_contact_line,base.group_user,1,1,1,1

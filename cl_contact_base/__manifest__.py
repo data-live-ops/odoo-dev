@@ -12,6 +12,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/res_partner_views.xml',
+        'wizard/contact_merge_wizard_views.xml',
     ],
     'installable': True,
     'application': False,
