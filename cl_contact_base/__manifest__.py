@@ -8,7 +8,7 @@
     'category': 'Contacts',
     'author': "Port Cities Ltd",
     'website': "http://www.portcities.net",
-    'depends': ['base'],
+    'depends': ['base', 'contacts'],
     'data': [
         'security/ir.model.access.csv',
         'views/res_partner_views.xml',
