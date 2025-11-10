@@ -12,11 +12,16 @@ class MailCannedResponse(models.Model):
         """Render substitution with placeholders replaced
 
         Supported placeholders:
-        [NAME] - Partner/Contact name
+        [NAME] - Partner/Contact name (Student name)
         [COMPANY] - Company name
         [PHONE] - Partner phone
         [EMAIL] - Partner email
         [USER] - Current user name
+        [STUDENT PHASE] - Student phase
+        [GRADE] - Student grade
+        [STUDENT ID] - Student ID (metabase_user_id)
+        [PARENT NAME] - First parent name
+        [PARENT NAMES] - All parent names (comma-separated)
 
         Args:
             channel_id: discuss.channel ID for context
@@ -54,12 +59,31 @@ class MailCannedResponse(models.Model):
             channel = self.env["discuss.channel"].browse(channel_id)
             if channel.exists():
                 partner = self._find_partner_from_channel(channel)
-                print(f"cek partner data: {partner}")
 
                 if partner:
                     replacements["[NAME]"] = partner.name or ""
                     replacements["[PHONE]"] = partner.mobile or partner.phone or ""
                     replacements["[EMAIL]"] = partner.email or ""
+                    replacements["[STUDENT PHASE]"] = (
+                        partner.metabase_student_phase or ""
+                    )
+                    replacements["[GRADE]"] = partner.metabase_grade or ""
+                    replacements["[STUDENT ID]"] = partner.metabase_user_id or ""
+
+                    # Get parent name(s) from student
+                    if partner.student_parent_ids:
+                        # First parent name
+                        replacements["[PARENT NAME]"] = partner.student_parent_ids[0].name or ""
+                        # All parent names (comma-separated)
+                        replacements["[PARENT NAMES]"] = ", ".join(partner.student_parent_ids.mapped('name'))
+                        _logger.info(
+                            f"[Canned Response] [PARENT NAME] = {replacements['[PARENT NAME]']}"
+                        )
+                    else:
+                        replacements["[PARENT NAME]"] = ""
+                        replacements["[PARENT NAMES]"] = ""
+                        _logger.info("[Canned Response] No parent found for student")
+
                     _logger.info(
                         f"[Canned Response] [NAME] = {replacements['[NAME]']} (partner ID: {partner.id})"
                     )
