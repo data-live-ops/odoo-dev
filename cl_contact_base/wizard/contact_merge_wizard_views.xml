@@ -42,16 +42,16 @@
                                             <field name="contact_count"/>
                                         </group>
                                         <group string="Select Master Contact (Keep)" colspan="4">
-                                            <field name="contact_line_ids" nolabel="1">
+                                            <field name="contact_line_ids" nolabel="1" widget="one2many">
                                                 <tree editable="bottom">
                                                     <field name="is_master" widget="boolean_toggle"/>
-                                                    <field name="name"/>
-                                                    <field name="mobile"/>
-                                                    <field name="phone"/>
-                                                    <field name="email"/>
-                                                    <field name="metabase_student_id"/>
-                                                    <field name="metabase_student_phase"/>
-                                                    <field name="create_date"/>
+                                                    <field name="name" readonly="1"/>
+                                                    <field name="mobile" readonly="1"/>
+                                                    <field name="phone" readonly="1"/>
+                                                    <field name="email" readonly="1"/>
+                                                    <field name="metabase_student_id" readonly="1"/>
+                                                    <field name="metabase_student_phase" readonly="1"/>
+                                                    <field name="create_date" readonly="1"/>
                                                 </tree>
                                             </field>
                                         </group>
