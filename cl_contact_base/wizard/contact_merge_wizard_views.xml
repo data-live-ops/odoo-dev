@@ -1,5 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Contact Line Tree View -->
+    <record id="view_contact_merge_contact_line_tree" model="ir.ui.view">
+        <field name="name">contact.merge.contact.line.tree</field>
+        <field name="model">contact.merge.contact.line</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom">
+                <field name="is_master" widget="boolean_toggle"/>
+                <field name="name" readonly="1"/>
+                <field name="mobile" readonly="1"/>
+                <field name="phone" readonly="1"/>
+                <field name="email" readonly="1"/>
+                <field name="metabase_student_id" readonly="1"/>
+                <field name="metabase_student_phase" readonly="1"/>
+                <field name="create_date" readonly="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Duplicate Group Form View -->
+    <record id="view_contact_merge_duplicate_group_form" model="ir.ui.view">
+        <field name="name">contact.merge.duplicate.group.form</field>
+        <field name="model">contact.merge.duplicate.group</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_merge" type="object" string="Merge Selected"
+                            class="oe_highlight"
+                            confirm="Are you sure you want to merge these contacts?"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="normalized_phone"/>
+                        <field name="contact_count"/>
+                    </group>
+                    <group string="Select Master Contact (Keep)" colspan="4">
+                        <field name="contact_line_ids" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
     <!-- Contact Merge Wizard Form View -->
     <record id="view_contact_merge_wizard_form" model="ir.ui.view">
         <field name="name">contact.merge.wizard.form</field>
@@ -22,7 +64,7 @@
 
                     <notebook invisible="total_duplicates == 0">
                         <page string="Duplicate Groups">
-                            <field name="duplicate_group_ids" mode="tree">
+                            <field name="duplicate_group_ids">
                                 <tree>
                                     <field name="normalized_phone" string="Phone Number"/>
                                     <field name="contact_count" string="Duplicates"/>
@@ -30,33 +72,6 @@
                                     <button name="action_merge" type="object" string="Merge This Group"
                                             class="btn-primary" icon="fa-compress"/>
                                 </tree>
-                                <form>
-                                    <header>
-                                        <button name="action_merge" type="object" string="Merge Selected"
-                                                class="oe_highlight"
-                                                confirm="Are you sure you want to merge these contacts?"/>
-                                    </header>
-                                    <sheet>
-                                        <group>
-                                            <field name="normalized_phone"/>
-                                            <field name="contact_count"/>
-                                        </group>
-                                        <group string="Select Master Contact (Keep)" colspan="4">
-                                            <field name="contact_line_ids" nolabel="1" widget="one2many">
-                                                <tree editable="bottom">
-                                                    <field name="is_master" widget="boolean_toggle"/>
-                                                    <field name="name" readonly="1"/>
-                                                    <field name="mobile" readonly="1"/>
-                                                    <field name="phone" readonly="1"/>
-                                                    <field name="email" readonly="1"/>
-                                                    <field name="metabase_student_id" readonly="1"/>
-                                                    <field name="metabase_student_phase" readonly="1"/>
-                                                    <field name="create_date" readonly="1"/>
-                                                </tree>
-                                            </field>
-                                        </group>
-                                    </sheet>
-                                </form>
                             </field>
                         </page>
                     </notebook>
