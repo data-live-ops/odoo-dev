@@ -176,40 +176,61 @@ class ResPartner(models.Model):
     def _merge_one2many_relations(self, duplicates):
         """Merge One2many relations from duplicates to master"""
         # Update attendance records
-        if hasattr(self, 'attendance_ids'):
-            self.env['res.partner.attendance.main'].search([
-                ('partner_id', 'in', duplicates.ids)
-            ]).write({'partner_id': self.id})
+        if 'attendance_ids' in self._fields and 'res.partner.attendance.main' in self.env:
+            try:
+                self.env['res.partner.attendance.main'].search([
+                    ('partner_id', 'in', duplicates.ids)
+                ]).write({'partner_id': self.id})
+            except Exception as e:
+                _logger.warning(f"[Contact Merge] Could not merge attendance records: {e}")
 
         # Update subscription records
-        if hasattr(self, 'subscription_ids'):
-            self.env['res.partner.subs'].search([
-                ('subs_student_id', 'in', duplicates.ids)
-            ]).write({'subs_student_id': self.id})
+        if 'subscription_ids' in self._fields and 'res.partner.subs' in self.env:
+            try:
+                self.env['res.partner.subs'].search([
+                    ('subs_student_id', 'in', duplicates.ids)
+                ]).write({'subs_student_id': self.id})
+            except Exception as e:
+                _logger.warning(f"[Contact Merge] Could not merge subscription records: {e}")
 
         # Update payment records
-        if hasattr(self, 'payment_received_ids'):
-            self.env['res.partner.payment.recieved'].search([
-                ('student_id', 'in', duplicates.ids)
-            ]).write({'student_id': self.id})
+        if 'payment_received_ids' in self._fields and 'res.partner.payment.recieved' in self.env:
+            try:
+                self.env['res.partner.payment.recieved'].search([
+                    ('student_id', 'in', duplicates.ids)
+                ]).write({'student_id': self.id})
+            except Exception as e:
+                _logger.warning(f"[Contact Merge] Could not merge payment received records: {e}")
 
-        if hasattr(self, 'payment_slot_selection_ids'):
-            self.env['res.partner.payment.slot.selection'].search([
-                ('student_id', 'in', duplicates.ids)
-            ]).write({'student_id': self.id})
+        if 'payment_slot_selection_ids' in self._fields and 'res.partner.payment.slot.selection' in self.env:
+            try:
+                self.env['res.partner.payment.slot.selection'].search([
+                    ('student_id', 'in', duplicates.ids)
+                ]).write({'student_id': self.id})
+            except Exception as e:
+                _logger.warning(f"[Contact Merge] Could not merge payment slot selection records: {e}")
 
-        if hasattr(self, 'payment_paid_access_ids'):
-            self.env['res.partner.payment.paid.access'].search([
-                ('student_id', 'in', duplicates.ids)
-            ]).write({'student_id': self.id})
+        if 'payment_paid_access_ids' in self._fields and 'res.partner.payment.paid.access' in self.env:
+            try:
+                self.env['res.partner.payment.paid.access'].search([
+                    ('student_id', 'in', duplicates.ids)
+                ]).write({'student_id': self.id})
+            except Exception as e:
+                _logger.warning(f"[Contact Merge] Could not merge payment paid access records: {e}")
 
     def _merge_many2many_relations(self, duplicates):
         """Merge Many2many relations from duplicates to master"""
         # Merge student_parent_ids if exists
-        if hasattr(self, 'student_parent_ids'):
-            for dup in duplicates:
-                if dup.student_parent_ids:
-                    # Add duplicate's parents to master
-                    for parent in dup.student_parent_ids:
-                        if parent.id not in self.student_parent_ids.ids:
-                            self.student_parent_ids = [(4, parent.id)]
+        if 'student_parent_ids' in self._fields:
+            try:
+                for dup in duplicates:
+                    if 'student_parent_ids' in dup._fields:
+                        dup_parents = dup.student_parent_ids
+                        if dup_parents:
+                            # Add duplicate's parents to master
+                            master_parent_ids = self.student_parent_ids.ids
+                            for parent in dup_parents:
+                                if parent.id not in master_parent_ids:
+                                    self.student_parent_ids = [(4, parent.id)]
+            except Exception as e:
+                _logger.warning(f"[Contact Merge] Could not merge many2many relations: {e}")
