@@ -71,18 +71,55 @@ class MailCannedResponse(models.Model):
                     replacements["[STUDENT ID]"] = partner.metabase_user_id or ""
 
                     # Get parent name(s) from student
-                    if partner.student_parent_ids:
-                        # First parent name
-                        replacements["[PARENT NAME]"] = partner.student_parent_ids[0].name or ""
-                        # All parent names (comma-separated)
-                        replacements["[PARENT NAMES]"] = ", ".join(partner.student_parent_ids.mapped('name'))
-                        _logger.info(
-                            f"[Canned Response] [PARENT NAME] = {replacements['[PARENT NAME]']}"
-                        )
+                    _logger.info(f"[Canned Response] Checking parent info for partner {partner.id}")
+
+                    # Method 1: Try related_parent_id (Many2one)
+                    if hasattr(partner, 'related_parent_id') and partner.related_parent_id:
+                        _logger.info(f"[Canned Response] Found related_parent_id: {partner.related_parent_id.name}")
+                        replacements["[PARENT NAME]"] = partner.related_parent_id.name or ""
+                        replacements["[PARENT NAMES]"] = partner.related_parent_id.name or ""
+
+                    # Method 2: Try student_parent_ids (Many2many)
+                    elif hasattr(partner, 'student_parent_ids'):
+                        parent_ids = partner.student_parent_ids
+                        _logger.info(f"[Canned Response] student_parent_ids count: {len(parent_ids)}")
+
+                        if parent_ids:
+                            # Log all parent IDs and names
+                            for idx, parent in enumerate(parent_ids):
+                                _logger.info(f"[Canned Response] Parent {idx}: ID={parent.id}, Name={parent.name}")
+
+                            # First parent name
+                            replacements["[PARENT NAME]"] = parent_ids[0].name or ""
+                            # All parent names (comma-separated)
+                            replacements["[PARENT NAMES]"] = ", ".join(parent_ids.mapped('name'))
+                        else:
+                            replacements["[PARENT NAME]"] = ""
+                            replacements["[PARENT NAMES]"] = ""
+                            _logger.info("[Canned Response] student_parent_ids is empty")
+
+                    # Method 3: Search by metabase_parent_id (if student has it stored)
+                    elif hasattr(partner, 'metabase_parent_id') and partner.metabase_parent_id:
+                        _logger.info(f"[Canned Response] Searching parent by metabase_parent_id: {partner.metabase_parent_id}")
+                        parent_record = self.env['res.partner'].search([
+                            ('metabase_parent_id', '=', partner.metabase_parent_id),
+                            ('is_parent', '=', True)
+                        ], limit=1)
+                        if parent_record:
+                            _logger.info(f"[Canned Response] Found parent by metabase_parent_id: {parent_record.name}")
+                            replacements["[PARENT NAME]"] = parent_record.name or ""
+                            replacements["[PARENT NAMES]"] = parent_record.name or ""
+                        else:
+                            replacements["[PARENT NAME]"] = ""
+                            replacements["[PARENT NAMES]"] = ""
+                            _logger.info("[Canned Response] No parent found by metabase_parent_id")
                     else:
                         replacements["[PARENT NAME]"] = ""
                         replacements["[PARENT NAMES]"] = ""
-                        _logger.info("[Canned Response] No parent found for student")
+                        _logger.info("[Canned Response] No parent info available")
+
+                    _logger.info(f"[Canned Response] [PARENT NAME] = {replacements.get('[PARENT NAME]', '')}")
+                    _logger.info(f"[Canned Response] [PARENT NAMES] = {replacements.get('[PARENT NAMES]', '')}")
 
                     _logger.info(
                         f"[Canned Response] [NAME] = {replacements['[NAME]']} (partner ID: {partner.id})"
