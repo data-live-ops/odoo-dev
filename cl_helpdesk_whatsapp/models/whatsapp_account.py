@@ -98,27 +98,38 @@ class WhatsAppAccount(models.Model):
         }
         if partner:
             _logger.info(
-                "Partner found: %s %s %s",
-                partner.name, partner.mobile, partner.phone
+                "[Ticket Creation] Partner found: %s (ID: %s, mobile: %s, phone: %s, student_phase: %s)",
+                partner.name, partner.id, partner.mobile, partner.phone,
+                partner.metabase_student_phase or 'Not Set'
             )
             ticket_vals['partner_id'] = partner.id
             ticket_vals['partner_phone'] = partner.phone or partner.mobile
         elif partner_formatted:
             _logger.info(
-                "Partner formatted found: %s %s %s",
-                partner_formatted.name, partner_formatted.mobile, partner_formatted.phone
+                "[Ticket Creation] Partner formatted found: %s (ID: %s, mobile: %s, phone: %s, student_phase: %s)",
+                partner_formatted.name, partner_formatted.id, partner_formatted.mobile,
+                partner_formatted.phone, partner_formatted.metabase_student_phase or 'Not Set'
             )
             ticket_vals['partner_id'] = partner_formatted.id
             ticket_vals['partner_phone'] = partner_formatted.phone or\
                 partner_formatted.mobile
         else:
-            _logger.info("Partner not found")
+            _logger.info("[Ticket Creation] Partner not found for phone: %s", sender_mobile)
             # Save phone in description if no partner found
             ticket_vals['partner_phone'] = sender_mobile
         ticket_vals['description'] += f"\nPhone: {sender_mobile}"
 
+        _logger.info("[Ticket Creation] Creating ticket with values: %s", ticket_vals)
         ticket = self.env['helpdesk.ticket'].create(ticket_vals)
+        _logger.info("[Ticket Creation] Ticket created: ID=%s, Name=%s, Student Phase=%s",
+                    ticket.id, ticket.name, ticket.student_phase or 'Not Set')
+
+        # Auto-assign based on student phase
         ticket.assign_user_based_on_student_phase()
+
+        _logger.info("[Ticket Creation] Final assignment - Team: %s, User: %s",
+                    ticket.team_id.name if ticket.team_id else 'Not Assigned',
+                    ticket.user_id.name if ticket.user_id else 'Not Assigned')
         return ticket
 
     def _process_autoreplies(self, value):

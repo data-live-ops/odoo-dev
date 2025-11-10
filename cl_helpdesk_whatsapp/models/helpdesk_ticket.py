@@ -76,21 +76,55 @@ class HelpdeskTicket(models.Model):
         return ticket
 
     def assign_user_based_on_student_phase(self):
-        """ Check student phase and assign agent based on it """
-        if self.partner_id and self.partner_id.metabase_student_phase:
-            team_id = False
-            if self.partner_id.metabase_student_phase == 'new':
-                team_id = self.env['helpdesk.team'].search([
-                    ('new_student', '=', True)
-                ], limit=1)
-            elif self.partner_id.metabase_student_phase == 'paid':
-                team_id = self.env['helpdesk.team'].search([
-                    ('paid_student', '=', True)
-                ], limit=1)
+        """ Check student phase and assign agent based on it
+
+        Assignment Rules:
+        - Paid Student → Support team
+        - New Student or Non Paid Student → Onboarding team
+        """
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        if not self.partner_id:
+            _logger.warning(f"[Helpdesk Assignment] Ticket {self.id} has no partner, skipping assignment")
+            return
+
+        student_phase = self.partner_id.metabase_student_phase
+        _logger.info(f"[Helpdesk Assignment] Ticket {self.id} - Partner: {self.partner_id.name}, Student Phase: {student_phase}")
+
+        if not student_phase:
+            _logger.warning(f"[Helpdesk Assignment] Partner {self.partner_id.name} has no student phase, skipping assignment")
+            return
+
+        team_id = False
+
+        # Paid Student → Support team
+        if student_phase == 'paid':
+            team_id = self.env['helpdesk.team'].search([
+                ('name', '=', 'Support')
+            ], limit=1)
+            _logger.info(f"[Helpdesk Assignment] Paid Student → Looking for 'Support' team")
+
+        # New Student or Non Paid Student → Onboarding team
+        elif student_phase in ['new', 'non_paid']:
+            team_id = self.env['helpdesk.team'].search([
+                ('name', '=', 'Onboarding')
+            ], limit=1)
+            _logger.info(f"[Helpdesk Assignment] New/Non-Paid Student → Looking for 'Onboarding' team")
+
+        if team_id:
+            _logger.info(f"[Helpdesk Assignment] Found team: {team_id.name} (ID: {team_id.id})")
+            self.team_id = team_id
+
+            # Assign user from team
+            user_dict = team_id._determine_user_to_assign()
+            assigned_user_id = user_dict.get(team_id.id)
+
+            if assigned_user_id:
+                self.user_id = assigned_user_id
+                _logger.info(f"[Helpdesk Assignment] Assigned to user: {self.user_id.name} (ID: {assigned_user_id})")
             else:
-                team_id = self.env['helpdesk.team'].search([
-                    ('non_paid_student', '=', True)
-                ], limit=1)
-            if team_id:
-                self.team_id = team_id
-                self.user_id = team_id._determine_user_to_assign()[team_id.id]
+                _logger.warning(f"[Helpdesk Assignment] Team {team_id.name} returned no user to assign")
+        else:
+            team_name = 'Support' if student_phase == 'paid' else 'Onboarding'
+            _logger.warning(f"[Helpdesk Assignment] Team '{team_name}' not found for student phase '{student_phase}'")
