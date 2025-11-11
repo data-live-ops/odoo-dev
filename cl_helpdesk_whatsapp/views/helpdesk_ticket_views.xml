@@ -11,7 +11,9 @@
                 <field name="initiated_by" string="Initiated by" widget="radio" />
             </xpath>
             <xpath expr="//div[hasclass('o_row_readonly')]" position="after">
-                <field name="student_phase" class="text-dark fw-bold" style="opacity: 1 !important" />
+                <label for="student_phase" string="Student Phase"
+                    style="opacity: 1 !important; color: #000000 !important;" />
+                <field name="student_phase" nolabel="1" />
                 <field name="channel" />
             </xpath>
         </field>
