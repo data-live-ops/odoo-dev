@@ -12,6 +12,7 @@ class WhatsAppAccount(models.Model):
     def _process_messages(self, value):
         """
         Override to add autoreply functionality for incoming messages
+        and ensure correct partner is linked to discuss channel
         """
         # Call the original method to process the message
         result = super(WhatsAppAccount, self)._process_messages(value)
@@ -23,6 +24,13 @@ class WhatsAppAccount(models.Model):
             messages = value['whatsapp_business_api_data']['messages']
         if messages:
             for message in messages:
+                sender_mobile = message.get('from')
+                if not sender_mobile:
+                    continue
+
+                # Fix discuss channel partner if there are duplicates
+                self._fix_channel_partner(sender_mobile)
+
                 # If message is a button, extract payload as message_body
                 if message.get('type') == 'button' and message.get(
                     'button',
@@ -32,7 +40,7 @@ class WhatsAppAccount(models.Model):
                 else:
                     message_body = message.get('text', {}).get('body') or\
                         message.get('body')
-                sender_mobile = message.get('from')
+
                 self.auto_create_ticket_from_whatsapp(
                     message_body,
                     sender_mobile
@@ -42,6 +50,60 @@ class WhatsAppAccount(models.Model):
         self._process_autoreplies(value)
 
         return result
+
+    def _fix_channel_partner(self, sender_mobile):
+        """
+        Fix discuss channel partner when there are duplicate contacts.
+        Ensures the channel uses the best partner match.
+
+        :param sender_mobile: str, the sender's phone number
+        """
+        try:
+            # Find the channel for this phone number
+            channel = self._find_active_channel(sender_mobile)
+            if not channel:
+                _logger.debug(f"[Channel Fix] No active channel found for {sender_mobile}")
+                return
+
+            # Find best partner match
+            best_partner = self._find_best_partner_by_phone(sender_mobile)
+            if not best_partner:
+                _logger.debug(f"[Channel Fix] No partner found for {sender_mobile}")
+                return
+
+            # Get current channel partner
+            current_partners = channel.channel_partner_ids
+
+            # If channel already has the correct partner, skip
+            if best_partner in current_partners:
+                _logger.debug(f"[Channel Fix] Channel already has correct partner: {best_partner.name}")
+                return
+
+            # Update channel to use best partner
+            # Remove other partners with same phone and add the best one
+            partners_to_remove = current_partners.filtered(
+                lambda p: p.mobile == best_partner.mobile or p.phone == best_partner.phone
+            )
+
+            if partners_to_remove:
+                channel.write({
+                    'channel_partner_ids': [
+                        (3, p.id) for p in partners_to_remove  # Remove duplicates
+                    ] + [(4, best_partner.id)]  # Add best partner
+                })
+                _logger.info(
+                    f"[Channel Fix] Updated channel {channel.id} to use partner: {best_partner.name} "
+                    f"(removed {len(partners_to_remove)} duplicate(s))"
+                )
+            else:
+                # No duplicates to remove, just add the best partner
+                channel.write({
+                    'channel_partner_ids': [(4, best_partner.id)]
+                })
+                _logger.info(f"[Channel Fix] Added partner {best_partner.name} to channel {channel.id}")
+
+        except Exception as e:
+            _logger.warning(f"[Channel Fix] Failed to fix channel partner for {sender_mobile}: {e}")
 
     def _normalize_phone_number(self, phone):
         """
@@ -81,6 +143,64 @@ class WhatsAppAccount(models.Model):
         _logger.info(f"[Phone Normalize] Input: {phone} → Formats: {formats}")
         return formats
 
+    def _find_best_partner_by_phone(self, sender_mobile):
+        """
+        Find the best partner match when there are duplicates with same phone.
+        Priority:
+        1. Partner with metabase_student_id (most complete data)
+        2. Partner that is a student (more likely to chat)
+        3. Most recently updated partner
+
+        :param sender_mobile: str, the sender's phone number
+        :return: res.partner record or False
+        """
+        # Normalize phone number to multiple formats for matching
+        phone_formats = self._normalize_phone_number(sender_mobile)
+
+        _logger.info(f"[Partner Search] Searching partner with phone formats: {phone_formats}")
+
+        # Search for ALL partners matching the phone (not just first one)
+        all_partners = self.env['res.partner']
+        for phone_format in phone_formats:
+            partners = self.env['res.partner'].search([
+                '|',
+                ('mobile', '=', phone_format),
+                ('phone', '=', phone_format),
+            ])
+            if partners:
+                all_partners |= partners
+                _logger.info(f"[Partner Search] Found {len(partners)} partner(s) with format: {phone_format}")
+
+        if not all_partners:
+            return False
+
+        # If only one partner, return it
+        if len(all_partners) == 1:
+            _logger.info(f"[Partner Search] Single partner found: {all_partners.name}")
+            return all_partners
+
+        # Multiple partners found - select the best one
+        _logger.warning(f"[Partner Search] Multiple partners found ({len(all_partners)}) for phone {sender_mobile}, selecting best match")
+
+        # Priority 1: Partner with metabase_student_id (most complete)
+        partners_with_student_id = all_partners.filtered(lambda p: p.metabase_student_id)
+        if partners_with_student_id:
+            best = partners_with_student_id.sorted(lambda p: p.write_date, reverse=True)[0]
+            _logger.info(f"[Partner Search] Selected partner with student_id: {best.name} (ID: {best.id})")
+            return best
+
+        # Priority 2: Partner that is a student
+        student_partners = all_partners.filtered(lambda p: p.contact_type == 'student' or p.is_student)
+        if student_partners:
+            best = student_partners.sorted(lambda p: p.write_date, reverse=True)[0]
+            _logger.info(f"[Partner Search] Selected student partner: {best.name} (ID: {best.id})")
+            return best
+
+        # Priority 3: Most recently updated
+        best = all_partners.sorted(lambda p: p.write_date, reverse=True)[0]
+        _logger.info(f"[Partner Search] Selected most recent partner: {best.name} (ID: {best.id})")
+        return best
+
     def auto_create_ticket_from_whatsapp(self, message_body, sender_mobile):
         """
         Auto-create a helpdesk ticket when receiving specific keyword.
@@ -102,22 +222,8 @@ class WhatsAppAccount(models.Model):
                     message_body.strip() != trigger_message:
                 return None  # Only trigger on exact message
 
-        # Normalize phone number to multiple formats for matching
-        phone_formats = self._normalize_phone_number(sender_mobile)
-
-        _logger.info(f"[Ticket Creation] Searching partner with phone formats: {phone_formats}")
-
-        # Search for partner by mobile using multiple formats
-        partner = False
-        for phone_format in phone_formats:
-            partner = self.env['res.partner'].search([
-                '|',
-                ('mobile', '=', phone_format),
-                ('phone', '=', phone_format),
-            ], limit=1)
-            if partner:
-                _logger.info(f"[Ticket Creation] Partner found with format: {phone_format}")
-                break
+        # Use smart partner search to handle duplicates
+        partner = self._find_best_partner_by_phone(sender_mobile)
         # Check for existing open ticket for this partner or phone
         open_ticket_domain = [('stage_id.is_closed_stage', '=', False)]
         if partner:

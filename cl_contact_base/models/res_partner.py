@@ -132,23 +132,45 @@ class ResPartner(models.Model):
                         break
 
         if merge_vals:
-            self.write(merge_vals)
+            try:
+                self.write(merge_vals)
+            except Exception as e:
+                _logger.warning(f"[Contact Merge] Could not update master fields: {e}")
 
         # 2. Update all references to point to master contact
-        self._update_references_to_master(duplicate_ids)
+        try:
+            with self.env.cr.savepoint():
+                self._update_references_to_master(duplicate_ids)
+        except Exception as e:
+            _logger.warning(f"[Contact Merge] Could not update references: {e}")
 
         # 3. Merge One2many relations (attendance, subscription, payment)
-        self._merge_one2many_relations(duplicates)
+        try:
+            with self.env.cr.savepoint():
+                self._merge_one2many_relations(duplicates)
+        except Exception as e:
+            _logger.warning(f"[Contact Merge] Could not merge one2many relations: {e}")
 
         # 4. Merge Many2many relations (student_parent_ids if exists)
-        self._merge_many2many_relations(duplicates)
+        try:
+            with self.env.cr.savepoint():
+                self._merge_many2many_relations(duplicates)
+        except Exception as e:
+            _logger.warning(f"[Contact Merge] Could not merge many2many relations: {e}")
 
-        # 5. Add note to chatter about merge
-        merge_note = f"Merged duplicate contacts: {', '.join([f'{d.name} (ID:{d.id})' for d in duplicates])}"
-        self.message_post(body=merge_note)
+        # 5. Add note to chatter about merge (optional, don't fail if this errors)
+        try:
+            merge_note = f"Merged duplicate contacts: {', '.join([f'{d.name} (ID:{d.id})' for d in duplicates])}"
+            self.message_post(body=merge_note)
+        except Exception as e:
+            _logger.warning(f"[Contact Merge] Could not post merge note to chatter: {e}")
 
         # 6. Archive duplicates instead of delete (safer)
-        duplicates.write({'active': False})
+        try:
+            duplicates.write({'active': False})
+        except Exception as e:
+            _logger.error(f"[Contact Merge] Could not archive duplicates: {e}")
+            raise
 
         _logger.info(f"[Contact Merge] Successfully merged {len(duplicates)} contacts into {self.name}")
 
@@ -163,13 +185,14 @@ class ResPartner(models.Model):
 
         for model_name, field_name in models_to_update:
             try:
-                # SQL update for performance
-                self.env.cr.execute(f"""
-                    UPDATE {model_name.replace('.', '_')}
-                    SET {field_name} = %s
-                    WHERE {field_name} IN %s
-                """, (self.id, tuple(duplicate_ids)))
-                _logger.info(f"[Contact Merge] Updated {model_name}.{field_name} references")
+                with self.env.cr.savepoint():
+                    # SQL update for performance
+                    self.env.cr.execute(f"""
+                        UPDATE {model_name.replace('.', '_')}
+                        SET {field_name} = %s
+                        WHERE {field_name} IN %s
+                    """, (self.id, tuple(duplicate_ids)))
+                    _logger.info(f"[Contact Merge] Updated {model_name}.{field_name} references")
             except Exception as e:
                 _logger.warning(f"[Contact Merge] Could not update {model_name}.{field_name}: {e}")
 
@@ -178,43 +201,48 @@ class ResPartner(models.Model):
         # Update attendance records
         if 'attendance_ids' in self._fields and 'res.partner.attendance.main' in self.env:
             try:
-                self.env['res.partner.attendance.main'].search([
-                    ('partner_id', 'in', duplicates.ids)
-                ]).write({'partner_id': self.id})
+                with self.env.cr.savepoint():
+                    self.env['res.partner.attendance.main'].search([
+                        ('partner_id', 'in', duplicates.ids)
+                    ]).write({'partner_id': self.id})
             except Exception as e:
                 _logger.warning(f"[Contact Merge] Could not merge attendance records: {e}")
 
         # Update subscription records
         if 'subscription_ids' in self._fields and 'res.partner.subs' in self.env:
             try:
-                self.env['res.partner.subs'].search([
-                    ('subs_student_id', 'in', duplicates.ids)
-                ]).write({'subs_student_id': self.id})
+                with self.env.cr.savepoint():
+                    self.env['res.partner.subs'].search([
+                        ('subs_student_id', 'in', duplicates.ids)
+                    ]).write({'subs_student_id': self.id})
             except Exception as e:
                 _logger.warning(f"[Contact Merge] Could not merge subscription records: {e}")
 
         # Update payment records
         if 'payment_received_ids' in self._fields and 'res.partner.payment.recieved' in self.env:
             try:
-                self.env['res.partner.payment.recieved'].search([
-                    ('student_id', 'in', duplicates.ids)
-                ]).write({'student_id': self.id})
+                with self.env.cr.savepoint():
+                    self.env['res.partner.payment.recieved'].search([
+                        ('student_id', 'in', duplicates.ids)
+                    ]).write({'student_id': self.id})
             except Exception as e:
                 _logger.warning(f"[Contact Merge] Could not merge payment received records: {e}")
 
         if 'payment_slot_selection_ids' in self._fields and 'res.partner.payment.slot.selection' in self.env:
             try:
-                self.env['res.partner.payment.slot.selection'].search([
-                    ('student_id', 'in', duplicates.ids)
-                ]).write({'student_id': self.id})
+                with self.env.cr.savepoint():
+                    self.env['res.partner.payment.slot.selection'].search([
+                        ('student_id', 'in', duplicates.ids)
+                    ]).write({'student_id': self.id})
             except Exception as e:
                 _logger.warning(f"[Contact Merge] Could not merge payment slot selection records: {e}")
 
         if 'payment_paid_access_ids' in self._fields and 'res.partner.payment.paid.access' in self.env:
             try:
-                self.env['res.partner.payment.paid.access'].search([
-                    ('student_id', 'in', duplicates.ids)
-                ]).write({'student_id': self.id})
+                with self.env.cr.savepoint():
+                    self.env['res.partner.payment.paid.access'].search([
+                        ('student_id', 'in', duplicates.ids)
+                    ]).write({'student_id': self.id})
             except Exception as e:
                 _logger.warning(f"[Contact Merge] Could not merge payment paid access records: {e}")
 

@@ -61,22 +61,26 @@ class ContactMergeWizard(models.TransientModel):
         duplicate_count = 0
         for normalized_phone, contacts_list in phone_groups.items():
             if len(contacts_list) > 1:
-                # Create group
-                group = self.env['contact.merge.duplicate.group'].create({
-                    'wizard_id': self.id,
-                    'normalized_phone': normalized_phone,
-                    'contact_count': len(contacts_list),
-                })
+                # Filter out non-duplicates (student-parent with same phone is OK)
+                true_duplicates = self._filter_true_duplicates(contacts_list)
 
-                # Create contact lines
-                for contact in contacts_list:
-                    self.env['contact.merge.contact.line'].create({
-                        'group_id': group.id,
-                        'partner_id': contact.id,
-                        'is_master': False,  # User will select master manually
+                if len(true_duplicates) > 1:
+                    # Create group
+                    group = self.env['contact.merge.duplicate.group'].create({
+                        'wizard_id': self.id,
+                        'normalized_phone': normalized_phone,
+                        'contact_count': len(true_duplicates),
                     })
 
-                duplicate_count += 1
+                    # Create contact lines
+                    for contact in true_duplicates:
+                        self.env['contact.merge.contact.line'].create({
+                            'group_id': group.id,
+                            'partner_id': contact.id,
+                            'is_master': False,  # User will select master manually
+                        })
+
+                    duplicate_count += 1
 
         _logger.info(f"[Contact Merge] Found {duplicate_count} duplicate groups")
 
@@ -110,6 +114,52 @@ class ContactMergeWizard(models.TransientModel):
             return '628' + cleaned[2:]
 
         return cleaned  # Return as is if no pattern matches
+
+    def _filter_true_duplicates(self, contacts_list):
+        """
+        Filter out contacts that are not true duplicates.
+
+        Returns only contacts that are actual duplicates, excluding:
+        - Student-Parent pairs with same phone (family relation)
+        - Contacts with different roles but same phone
+
+        Args:
+            contacts_list: list of res.partner records with same phone
+
+        Returns:
+            list of res.partner records that are true duplicates
+        """
+        if len(contacts_list) <= 1:
+            return contacts_list
+
+        # Group by contact_type
+        by_type = {}
+        for contact in contacts_list:
+            contact_type = contact.contact_type or 'unknown'
+            if contact_type not in by_type:
+                by_type[contact_type] = []
+            by_type[contact_type].append(contact)
+
+        # Check if we have mixed types (student + parent)
+        has_student = 'student' in by_type and len(by_type['student']) > 0
+        has_parent = 'parent' in by_type and len(by_type['parent']) > 0
+
+        # If we have both student and parent, this is likely a family using same phone
+        # Only return duplicates within same type
+        if has_student and has_parent:
+            _logger.info(f"[Contact Merge] Skipping student-parent pair with same phone: {contacts_list[0].mobile or contacts_list[0].phone}")
+
+            # Return only groups within same type that have duplicates
+            true_duplicates = []
+            for contact_type, contacts in by_type.items():
+                if len(contacts) > 1:
+                    # Multiple contacts of same type = true duplicates
+                    true_duplicates.extend(contacts)
+
+            return true_duplicates
+
+        # If all same type or unknown type, they are potential duplicates
+        return contacts_list
 
     def action_merge_all(self):
         """Merge all duplicate groups (auto-select master)"""
