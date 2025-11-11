@@ -1,0 +1,13 @@
+/* Force Student Phase label to be black (not gray) */
+label.o_student_phase_label,
+.o_form_label[for="student_phase"] {
+    opacity: 1 !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+}
+
+/* Alternative: Target all labels in readonly sections to be black */
+.o_row_readonly ~ label.o_form_label {
+    opacity: 1 !important;
+    color: #000000 !important;
+}

@@ -20,6 +20,11 @@
         'views/whatsapp_message_views.xml',
         'views/helpdesk_stage_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'cl_helpdesk_whatsapp/static/src/css/helpdesk_ticket.css',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,
