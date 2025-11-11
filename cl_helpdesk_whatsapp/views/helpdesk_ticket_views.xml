@@ -2,17 +2,17 @@
     <record id="helpdesk_ticket_view_form" model="ir.ui.view">
         <field name="name">helpdesk.ticket.view.form.cl_helpdesk_whatsapp</field>
         <field name="model">helpdesk.ticket</field>
-        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form"/>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='team_id']" position="attributes">
                 <attribute name="required">false</attribute>
             </xpath>
             <xpath expr="//field[@name='team_id']" position="before">
-                <field name="initiated_by" string="Initiated by" widget="radio"/>
+                <field name="initiated_by" string="Initiated by" widget="radio" />
             </xpath>
             <xpath expr="//div[hasclass('o_row_readonly')]" position="after">
-                <field name="student_phase"/>
-                <field name="channel"/>
+                <field name="student_phase" class="text-dark fw-bold" style="opacity: 1 !important" />
+                <field name="channel" />
             </xpath>
         </field>
     </record>
