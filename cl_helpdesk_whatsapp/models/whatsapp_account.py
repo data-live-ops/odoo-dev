@@ -31,6 +31,9 @@ class WhatsAppAccount(models.Model):
                 # Fix discuss channel partner if there are duplicates
                 self._fix_channel_partner(sender_mobile)
 
+                # Auto-add internal users as members to the channel
+                self._ensure_channel_has_all_members(sender_mobile)
+
                 # If message is a button, extract payload as message_body
                 if message.get('type') == 'button' and message.get(
                     'button',
@@ -50,6 +53,26 @@ class WhatsAppAccount(models.Model):
         self._process_autoreplies(value)
 
         return result
+
+    def _ensure_channel_has_all_members(self, sender_mobile):
+        """
+        Ensure all internal users are added as members to the WhatsApp channel.
+        This is called after a message is received to auto-add members.
+
+        :param sender_mobile: str, the sender's phone number
+        """
+        try:
+            # Find the channel for this phone number
+            channel = self._find_active_channel(sender_mobile)
+            if not channel:
+                _logger.debug(f"[Channel Members] No active channel found for {sender_mobile}")
+                return
+
+            # Call the method to auto-add internal users as members
+            channel._auto_add_internal_users_as_members()
+
+        except Exception as e:
+            _logger.warning(f"[Channel Members] Failed to ensure members for {sender_mobile}: {e}")
 
     def _fix_channel_partner(self, sender_mobile):
         """

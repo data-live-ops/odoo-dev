@@ -8,25 +8,7 @@ class DiscussChannel(models.Model):
     """Extend Discuss Channel to auto-add members for WhatsApp channels"""
     _inherit = 'discuss.channel'
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        """
-        Override create to automatically add all internal users as members
-        when a WhatsApp channel is created.
-
-        This ensures all team members can see WhatsApp conversations
-        without manual invitation.
-        """
-        channels = super().create(vals_list)
-
-        # Process each created channel
-        for channel in channels:
-            if channel.channel_type == 'whatsapp':
-                self._auto_add_internal_users_as_members(channel)
-
-        return channels
-
-    def _auto_add_internal_users_as_members(self, channel):
+    def _auto_add_internal_users_as_members(self):
         """
         Automatically add all internal users (non-portal users) as members
         of the WhatsApp channel.
@@ -34,54 +16,75 @@ class DiscussChannel(models.Model):
         This allows all CS/support staff to see and respond to
         WhatsApp conversations.
 
-        :param channel: discuss.channel record (WhatsApp channel)
+        Can be called on a single channel or recordset of channels.
         """
-        try:
-            # Find all internal users (non-portal, active users)
-            internal_users = self.env['res.users'].search([
-                ('share', '=', False),  # Internal users only (not portal/external)
-                ('active', '=', True),
-            ])
+        for channel in self:
+            if channel.channel_type != 'whatsapp':
+                continue
 
-            if not internal_users:
-                _logger.warning(
-                    "[WhatsApp Channel] No internal users found to add as members"
+            try:
+                # Find all internal users (non-portal, active users)
+                internal_users = self.env['res.users'].search([
+                    ('share', '=', False),  # Internal users only (not portal/external)
+                    ('active', '=', True),
+                ])
+
+                if not internal_users:
+                    _logger.warning(
+                        "[WhatsApp Channel] No internal users found to add as members"
+                    )
+                    continue
+
+                # Get existing channel member partner IDs - use sudo to ensure we see all members
+                existing_member_partners = channel.sudo().channel_member_ids.mapped('partner_id')
+                existing_partner_ids = set(existing_member_partners.ids)
+
+                _logger.info(
+                    f"[WhatsApp Channel] Channel {channel.id} currently has "
+                    f"{len(existing_partner_ids)} members"
                 )
-                return
 
-            # Get existing channel member partner IDs
-            existing_partner_ids = channel.channel_member_ids.mapped('partner_id').ids
+                # Filter users whose partners are not already members
+                all_internal_partners = internal_users.mapped('partner_id')
+                partners_to_add = all_internal_partners.filtered(
+                    lambda p: p.id not in existing_partner_ids
+                )
 
-            # Filter users whose partners are not already members
-            partners_to_add = internal_users.mapped('partner_id').filtered(
-                lambda p: p.id not in existing_partner_ids
-            )
-
-            if partners_to_add:
-                # Add partners as channel members using Odoo 18 API
-                partner_ids = partners_to_add.ids
-                try:
-                    channel.add_members(partner_ids=partner_ids)
+                if partners_to_add:
+                    # Add partners as channel members using Odoo 18 API
+                    partner_ids_to_add = partners_to_add.ids
                     _logger.info(
-                        f"[WhatsApp Channel] Auto-added {len(partners_to_add)} internal users "
-                        f"as members to channel {channel.id} (phone: {channel.whatsapp_number})"
+                        f"[WhatsApp Channel] Attempting to add {len(partner_ids_to_add)} "
+                        f"partners to channel {channel.id}: {partner_ids_to_add}"
                     )
-                except Exception as e:
-                    _logger.error(
-                        f"[WhatsApp Channel] Failed to add members to channel {channel.id}: {e}",
-                        exc_info=True
+
+                    try:
+                        # Use sudo to ensure we have permission to add members
+                        channel.sudo().add_members(partner_ids=partner_ids_to_add)
+
+                        _logger.info(
+                            f"[WhatsApp Channel] Successfully added {len(partners_to_add)} "
+                            f"internal users as members to channel {channel.id} "
+                            f"(phone: {channel.whatsapp_number})"
+                        )
+                    except Exception as e:
+                        _logger.error(
+                            f"[WhatsApp Channel] Failed to add members to channel {channel.id}: {e}",
+                            exc_info=True
+                        )
+                else:
+                    _logger.debug(
+                        f"[WhatsApp Channel] All {len(all_internal_partners)} internal users "
+                        f"are already members of channel {channel.id}"
                     )
-            else:
-                _logger.debug(
-                    f"[WhatsApp Channel] All internal users are already members "
-                    f"of channel {channel.id}"
+
+            except Exception as e:
+                # Catch any unexpected errors during the whole process
+                _logger.error(
+                    f"[WhatsApp Channel] Unexpected error in auto-add members for "
+                    f"channel {channel.id}: {e}",
+                    exc_info=True
                 )
-        except Exception as e:
-            # Catch any unexpected errors during the whole process
-            _logger.error(
-                f"[WhatsApp Channel] Unexpected error in auto-add members: {e}",
-                exc_info=True
-            )
 
     def write(self, vals):
         """
