@@ -58,30 +58,28 @@ class DiscussChannel(models.Model):
             )
 
             if partners_to_add:
-                # Add partners as channel members
-                # Using the proper Odoo channel API
-                for partner in partners_to_add:
-                    try:
-                        channel._action_add_members(partner)
-                    except Exception as e:
-                        _logger.warning(
-                            f"[WhatsApp Channel] Failed to add partner {partner.name}: {e}"
-                        )
-                        continue
-
-                _logger.info(
-                    f"[WhatsApp Channel] Auto-added {len(partners_to_add)} internal users "
-                    f"as members to channel {channel.id} (phone: {channel.whatsapp_number})"
-                )
+                # Add partners as channel members using Odoo 18 API
+                partner_ids = partners_to_add.ids
+                try:
+                    channel.add_members(partner_ids=partner_ids)
+                    _logger.info(
+                        f"[WhatsApp Channel] Auto-added {len(partners_to_add)} internal users "
+                        f"as members to channel {channel.id} (phone: {channel.whatsapp_number})"
+                    )
+                except Exception as e:
+                    _logger.error(
+                        f"[WhatsApp Channel] Failed to add members to channel {channel.id}: {e}",
+                        exc_info=True
+                    )
             else:
                 _logger.debug(
                     f"[WhatsApp Channel] All internal users are already members "
                     f"of channel {channel.id}"
                 )
-
         except Exception as e:
+            # Catch any unexpected errors during the whole process
             _logger.error(
-                f"[WhatsApp Channel] Failed to auto-add members to channel {channel.id}: {e}",
+                f"[WhatsApp Channel] Unexpected error in auto-add members: {e}",
                 exc_info=True
             )
 
