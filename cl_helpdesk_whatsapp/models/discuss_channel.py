@@ -89,3 +89,75 @@ class DiscussChannel(models.Model):
         Currently just calls super.
         """
         return super().write(vals)
+
+    def _cron_add_internal_users_to_whatsapp_channels(self):
+        """
+        Scheduled action to add all internal users as members
+        to existing WhatsApp channels.
+
+        This is useful for bulk updating existing channels.
+        Can be run manually via Settings → Technical → Automation → Scheduled Actions
+        """
+        _logger.info("[WhatsApp Channel Cron] Starting bulk member addition to WhatsApp channels")
+
+        # Get all WhatsApp channels
+        channels = self.search([('channel_type', '=', 'whatsapp')])
+        _logger.info(f"[WhatsApp Channel Cron] Found {len(channels)} WhatsApp channels")
+
+        if not channels:
+            _logger.info("[WhatsApp Channel Cron] No WhatsApp channels found")
+            return
+
+        # Get all internal users
+        internal_users = self.env['res.users'].search([
+            ('share', '=', False),
+            ('active', '=', True),
+        ])
+        _logger.info(f"[WhatsApp Channel Cron] Found {len(internal_users)} internal users")
+
+        if not internal_users:
+            _logger.warning("[WhatsApp Channel Cron] No internal users found")
+            return
+
+        # Process each channel
+        channels_updated = 0
+        members_added_total = 0
+
+        for channel in channels:
+            try:
+                # Get existing members
+                existing_partners = channel.channel_member_ids.mapped('partner_id')
+
+                # Find partners to add
+                partners_to_add = internal_users.mapped('partner_id').filtered(
+                    lambda p: p not in existing_partners
+                )
+
+                if partners_to_add:
+                    # Add members
+                    channel.add_members(partner_ids=partners_to_add.ids)
+                    channels_updated += 1
+                    members_added_total += len(partners_to_add)
+
+                    _logger.info(
+                        f"[WhatsApp Channel Cron] Channel {channel.id} ({channel.name}): "
+                        f"Added {len(partners_to_add)} members"
+                    )
+                else:
+                    _logger.debug(
+                        f"[WhatsApp Channel Cron] Channel {channel.id} ({channel.name}): "
+                        f"Already has all members"
+                    )
+
+            except Exception as e:
+                _logger.error(
+                    f"[WhatsApp Channel Cron] Failed to process channel {channel.id}: {e}",
+                    exc_info=True
+                )
+                continue
+
+        _logger.info(
+            f"[WhatsApp Channel Cron] Completed! "
+            f"Updated {channels_updated} channels, "
+            f"added {members_added_total} members total"
+        )

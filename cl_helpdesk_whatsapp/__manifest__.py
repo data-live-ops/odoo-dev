@@ -14,6 +14,7 @@
         'cl_contact_base',
     ],
     'data': [
+        'data/ir_cron_whatsapp_channel_members.xml',
         'views/helpdesk_team_views.xml',
         'views/helpdesk_ticket_views.xml',
         'views/whatsapp_template_views.xml',
