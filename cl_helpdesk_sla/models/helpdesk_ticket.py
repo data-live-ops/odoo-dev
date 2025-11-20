@@ -36,14 +36,14 @@ class HelpdeskTicket(models.Model):
             ) ss_min ON t.id = ss_min.ticket_id
             JOIN helpdesk_sla s ON ss_min.sla_id = s.id
             WHERE t.team_id IS NOT NULL
-            AND t.sla_deadline IS NOT NULL
+            AND ss_min.deadline IS NOT NULL
             AND t.is_get_reminder = False
-            AND (t.sla_deadline - (INTERVAL '1 hour' * s.sla_deadline))
+            AND (ss_min.deadline - (INTERVAL '1 hour' * s.sla_deadline))
                 <= (NOW() AT TIME ZONE 'UTC')
         """)
         rows = self.env.cr.fetchall()
         for row in rows:
-            # Search tikcet model
+            # Search ticket model
             ticket = self.env['helpdesk.ticket'].sudo().browse(row[0])
             # Send reminder email using SLA's template
             template = self.env['mail.template'].sudo().browse(row[1])
