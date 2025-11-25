@@ -56,8 +56,9 @@ class WhatsAppAccount(models.Model):
 
     def _ensure_channel_has_all_members(self, sender_mobile):
         """
-        Ensure all internal users are added as members to the WhatsApp channel.
-        This is called after a message is received to auto-add members.
+        UPDATED: Now assigns Lead Owner (1 user = 1 admin) instead of all internal users.
+
+        This is called after a message is received to assign/add Lead Owner to channel.
 
         :param sender_mobile: str, the sender's phone number
         """
@@ -65,14 +66,17 @@ class WhatsAppAccount(models.Model):
             # Find the channel for this phone number
             channel = self._find_active_channel(sender_mobile)
             if not channel:
-                _logger.debug(f"[Channel Members] No active channel found for {sender_mobile}")
+                _logger.debug(f"[Lead Owner] No active channel found for {sender_mobile}")
                 return
 
-            # Call the method to auto-add internal users as members
-            channel._auto_add_internal_users_as_members()
+            # Find the best partner for this phone number
+            partner = self._find_best_partner_by_phone(sender_mobile)
+
+            # Call the method to add Lead Owner as member (1 user = 1 admin)
+            channel._add_lead_owner_as_member(partner=partner)
 
         except Exception as e:
-            _logger.warning(f"[Channel Members] Failed to ensure members for {sender_mobile}: {e}")
+            _logger.warning(f"[Lead Owner] Failed to assign lead owner for {sender_mobile}: {e}")
 
     def _fix_channel_partner(self, sender_mobile):
         """

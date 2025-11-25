@@ -8,83 +8,119 @@ class DiscussChannel(models.Model):
     """Extend Discuss Channel to auto-add members for WhatsApp channels"""
     _inherit = 'discuss.channel'
 
-    def _auto_add_internal_users_as_members(self):
+    def _get_customer_partner_from_channel(self):
         """
-        Automatically add all internal users (non-portal users) as members
-        of the WhatsApp channel.
+        Get the customer (non-internal user) partner from a WhatsApp channel.
 
-        This allows all CS/support staff to see and respond to
-        WhatsApp conversations.
+        Returns:
+            res.partner record or False
+        """
+        self.ensure_one()
 
-        Can be called on a single channel or recordset of channels.
+        # Get all partners in this channel
+        channel_partners = self.channel_partner_ids
+
+        # Find the customer (non-internal user partner)
+        for partner in channel_partners:
+            # Check if this partner is NOT linked to an internal user
+            user = self.env['res.users'].search([
+                ('partner_id', '=', partner.id),
+                ('share', '=', False),  # Internal user
+                ('active', '=', True),
+            ], limit=1)
+
+            if not user:
+                # This partner is not an internal user, so it's the customer
+                return partner
+
+        return False
+
+    def _add_lead_owner_as_member(self, partner=None):
+        """
+        Add only the Lead Owner as member to the WhatsApp channel.
+        This replaces the old method that added ALL internal users.
+
+        1 User = 1 Admin (Lead Owner)
+
+        Args:
+            partner: res.partner record of the customer (optional, will auto-detect)
+
+        Returns:
+            res.users record of the Lead Owner or False
         """
         for channel in self:
             if channel.channel_type != 'whatsapp':
                 continue
 
             try:
-                # Find all internal users (non-portal, active users)
-                internal_users = self.env['res.users'].search([
-                    ('share', '=', False),  # Internal users only (not portal/external)
-                    ('active', '=', True),
-                ])
+                # Get customer partner from channel if not provided
+                customer_partner = partner or channel._get_customer_partner_from_channel()
 
-                if not internal_users:
+                if not customer_partner:
                     _logger.warning(
-                        "[WhatsApp Channel] No internal users found to add as members"
+                        f"[WhatsApp Channel] No customer partner found for channel {channel.id}"
                     )
                     continue
 
-                # Get existing channel member partner IDs - use sudo to ensure we see all members
+                # Get or assign Lead Owner for this customer
+                lead_owner = customer_partner._get_or_assign_lead_owner()
+
+                if not lead_owner:
+                    _logger.warning(
+                        f"[WhatsApp Channel] Could not get/assign lead owner for "
+                        f"partner {customer_partner.name} (channel {channel.id})"
+                    )
+                    continue
+
+                # Check if Lead Owner is already a member
                 existing_member_partners = channel.sudo().channel_member_ids.mapped('partner_id')
                 existing_partner_ids = set(existing_member_partners.ids)
 
-                _logger.info(
-                    f"[WhatsApp Channel] Channel {channel.id} currently has "
-                    f"{len(existing_partner_ids)} members"
-                )
+                lead_owner_partner = lead_owner.partner_id
 
-                # Filter users whose partners are not already members
-                all_internal_partners = internal_users.mapped('partner_id')
-                partners_to_add = all_internal_partners.filtered(
-                    lambda p: p.id not in existing_partner_ids
-                )
-
-                if partners_to_add:
-                    # Add partners as channel members using Odoo 18 API
-                    partner_ids_to_add = partners_to_add.ids
-                    _logger.info(
-                        f"[WhatsApp Channel] Attempting to add {len(partner_ids_to_add)} "
-                        f"partners to channel {channel.id}: {partner_ids_to_add}"
-                    )
-
-                    try:
-                        # Use sudo to ensure we have permission to add members
-                        channel.sudo().add_members(partner_ids=partner_ids_to_add)
-
-                        _logger.info(
-                            f"[WhatsApp Channel] Successfully added {len(partners_to_add)} "
-                            f"internal users as members to channel {channel.id} "
-                            f"(phone: {channel.whatsapp_number})"
-                        )
-                    except Exception as e:
-                        _logger.error(
-                            f"[WhatsApp Channel] Failed to add members to channel {channel.id}: {e}",
-                            exc_info=True
-                        )
-                else:
+                if lead_owner_partner.id in existing_partner_ids:
                     _logger.debug(
-                        f"[WhatsApp Channel] All {len(all_internal_partners)} internal users "
-                        f"are already members of channel {channel.id}"
+                        f"[WhatsApp Channel] Lead Owner {lead_owner.name} is already "
+                        f"a member of channel {channel.id}"
                     )
+                    return lead_owner
+
+                # Add Lead Owner as member
+                try:
+                    channel.sudo().add_members(partner_ids=[lead_owner_partner.id])
+                    _logger.info(
+                        f"[WhatsApp Channel] Added Lead Owner {lead_owner.name} "
+                        f"to channel {channel.id} for customer {customer_partner.name}"
+                    )
+                    return lead_owner
+                except Exception as e:
+                    _logger.error(
+                        f"[WhatsApp Channel] Failed to add Lead Owner to channel {channel.id}: {e}",
+                        exc_info=True
+                    )
+                    return False
 
             except Exception as e:
-                # Catch any unexpected errors during the whole process
                 _logger.error(
-                    f"[WhatsApp Channel] Unexpected error in auto-add members for "
-                    f"channel {channel.id}: {e}",
+                    f"[WhatsApp Channel] Unexpected error in _add_lead_owner_as_member "
+                    f"for channel {channel.id}: {e}",
                     exc_info=True
                 )
+
+        return False
+
+    def _auto_add_internal_users_as_members(self):
+        """
+        DEPRECATED: This method now calls _add_lead_owner_as_member instead.
+
+        Previously added ALL internal users to the channel (caused spam).
+        Now only adds the Lead Owner (1 user = 1 admin).
+        """
+        _logger.info(
+            "[WhatsApp Channel] _auto_add_internal_users_as_members called, "
+            "redirecting to _add_lead_owner_as_member"
+        )
+        return self._add_lead_owner_as_member()
 
     def write(self, vals):
         """
@@ -95,13 +131,14 @@ class DiscussChannel(models.Model):
 
     def _cron_add_internal_users_to_whatsapp_channels(self):
         """
-        Scheduled action to add all internal users as members
-        to existing WhatsApp channels.
+        Scheduled action to assign Lead Owners to WhatsApp channels.
 
-        This is useful for bulk updating existing channels.
+        UPDATED: Now assigns Lead Owner (1 user = 1 admin) instead of all internal users.
+
+        This is useful for bulk updating existing channels that don't have Lead Owners.
         Can be run manually via Settings → Technical → Automation → Scheduled Actions
         """
-        _logger.info("[WhatsApp Channel Cron] Starting bulk member addition to WhatsApp channels")
+        _logger.info("[WhatsApp Channel Cron] Starting Lead Owner assignment to WhatsApp channels")
 
         # Get all WhatsApp channels
         channels = self.search([('channel_type', '=', 'whatsapp')])
@@ -111,45 +148,42 @@ class DiscussChannel(models.Model):
             _logger.info("[WhatsApp Channel Cron] No WhatsApp channels found")
             return
 
-        # Get all internal users
-        internal_users = self.env['res.users'].search([
-            ('share', '=', False),
-            ('active', '=', True),
-        ])
-        _logger.info(f"[WhatsApp Channel Cron] Found {len(internal_users)} internal users")
-
-        if not internal_users:
-            _logger.warning("[WhatsApp Channel Cron] No internal users found")
-            return
-
         # Process each channel
         channels_updated = 0
-        members_added_total = 0
+        lead_owners_assigned = 0
 
         for channel in channels:
             try:
-                # Get existing members
-                existing_partners = channel.channel_member_ids.mapped('partner_id')
+                # Get customer partner from channel
+                customer_partner = channel._get_customer_partner_from_channel()
 
-                # Find partners to add
-                partners_to_add = internal_users.mapped('partner_id').filtered(
-                    lambda p: p not in existing_partners
-                )
+                if not customer_partner:
+                    _logger.debug(
+                        f"[WhatsApp Channel Cron] Channel {channel.id}: No customer partner found"
+                    )
+                    continue
 
-                if partners_to_add:
-                    # Add members
-                    channel.add_members(partner_ids=partners_to_add.ids)
+                # Check if already has lead owner as member
+                if customer_partner.lead_owner_id:
+                    lead_owner_partner = customer_partner.lead_owner_id.partner_id
+                    existing_members = channel.channel_member_ids.mapped('partner_id')
+
+                    if lead_owner_partner in existing_members:
+                        _logger.debug(
+                            f"[WhatsApp Channel Cron] Channel {channel.id}: "
+                            f"Lead Owner {customer_partner.lead_owner_id.name} already member"
+                        )
+                        continue
+
+                # Add Lead Owner as member
+                lead_owner = channel._add_lead_owner_as_member(partner=customer_partner)
+
+                if lead_owner:
                     channels_updated += 1
-                    members_added_total += len(partners_to_add)
-
+                    lead_owners_assigned += 1
                     _logger.info(
                         f"[WhatsApp Channel Cron] Channel {channel.id} ({channel.name}): "
-                        f"Added {len(partners_to_add)} members"
-                    )
-                else:
-                    _logger.debug(
-                        f"[WhatsApp Channel Cron] Channel {channel.id} ({channel.name}): "
-                        f"Already has all members"
+                        f"Assigned Lead Owner {lead_owner.name}"
                     )
 
             except Exception as e:
@@ -162,5 +196,5 @@ class DiscussChannel(models.Model):
         _logger.info(
             f"[WhatsApp Channel Cron] Completed! "
             f"Updated {channels_updated} channels, "
-            f"added {members_added_total} members total"
+            f"assigned {lead_owners_assigned} Lead Owners"
         )

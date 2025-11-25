@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the partner form view to show Lead Owner -->
+    <record id="view_partner_form_lead_owner_inherit" model="ir.ui.view">
+        <field name="name">res.partner.form.lead_owner.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <!-- Add Lead Owner field in the contact form -->
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="lead_owner_id" options="{'no_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add Lead Owner to contact list/tree view -->
+    <record id="view_partner_tree_lead_owner_inherit" model="ir.ui.view">
+        <field name="name">res.partner.tree.lead_owner.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="lead_owner_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add Lead Owner filter in search view -->
+    <record id="view_partner_search_lead_owner_inherit" model="ir.ui.view">
+        <field name="name">res.partner.search.lead_owner.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="lead_owner_id"/>
+            </xpath>
+            <xpath expr="//filter[@name='salesperson']" position="after">
+                <filter string="My Leads" name="my_leads" domain="[('lead_owner_id', '=', uid)]"/>
+                <separator/>
+                <filter string="No Lead Owner" name="no_lead_owner" domain="[('lead_owner_id', '=', False)]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Lead Owner" name="group_lead_owner" context="{'group_by': 'lead_owner_id'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
