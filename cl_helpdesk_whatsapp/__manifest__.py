@@ -20,7 +20,7 @@
         'views/whatsapp_template_views.xml',
         'views/whatsapp_message_views.xml',
         'views/helpdesk_stage_views.xml',
-        'views/res_partner_views.xml',
+        # 'views/res_partner_views.xml',  # Disabled until lead_owner_id column is created
     ],
     'assets': {
         'web.assets_backend': [
