@@ -32,4 +32,5 @@
     'auto_install': False,
     'license': 'AGPL-3',
     'support': 'modules@portcities.net',
+    'pre_init_hook': 'pre_init_hook',
 }

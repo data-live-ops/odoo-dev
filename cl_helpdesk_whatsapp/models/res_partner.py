@@ -15,6 +15,24 @@ class ResPartner(models.Model):
         help='The admin responsible for this contact. Auto-assigned based on student phase.',
     )
 
+    @api.model
+    def _auto_init(self):
+        """Create lead_owner_id column before ORM tries to use it."""
+        cr = self.env.cr
+        cr.execute("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'res_partner'
+            AND column_name = 'lead_owner_id'
+        """)
+        if not cr.fetchone():
+            _logger.info("[Lead Owner] Creating lead_owner_id column in res_partner table")
+            cr.execute("""
+                ALTER TABLE res_partner
+                ADD COLUMN lead_owner_id INTEGER
+            """)
+        return super()._auto_init()
+
     def _get_team_by_student_phase(self):
         """
         Get the helpdesk team based on student phase configuration.
