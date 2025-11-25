@@ -1,8 +1,9 @@
 from . import models
 
 
-def pre_init_hook(cr):
+def pre_init_hook(env):
     """Called before module installation - creates column if needed."""
+    cr = env.cr
     cr.execute("""
         SELECT column_name
         FROM information_schema.columns
