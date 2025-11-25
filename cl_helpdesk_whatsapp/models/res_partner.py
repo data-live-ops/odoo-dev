@@ -5,52 +5,15 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def _check_lead_owner_column_exists(cr):
-    """Check if lead_owner_id column exists in res_partner table."""
-    cr.execute("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'res_partner'
-        AND column_name = 'lead_owner_id'
-    """)
-    return cr.fetchone() is not None
-
-
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    def _setup_fields(self):
-        """Override to conditionally add lead_owner_id field."""
-        super()._setup_fields()
-        # Field will be added after column is created via upgrade
-
-    def _get_lead_owner_id(self):
-        """Safely get lead_owner_id if the column exists."""
-        self.ensure_one()
-        if not _check_lead_owner_column_exists(self.env.cr):
-            return False
-        # Use raw SQL to avoid field not found error
-        self.env.cr.execute(
-            "SELECT lead_owner_id FROM res_partner WHERE id = %s",
-            (self.id,)
-        )
-        result = self.env.cr.fetchone()
-        if result and result[0]:
-            return self.env['res.users'].browse(result[0])
-        return False
-
-    def _set_lead_owner_id(self, user):
-        """Safely set lead_owner_id if the column exists."""
-        self.ensure_one()
-        if not _check_lead_owner_column_exists(self.env.cr):
-            _logger.warning("[Lead Owner] Column lead_owner_id does not exist yet")
-            return False
-        user_id = user.id if user else None
-        self.env.cr.execute(
-            "UPDATE res_partner SET lead_owner_id = %s WHERE id = %s",
-            (user_id, self.id)
-        )
-        return True
+    lead_owner_id = fields.Many2one(
+        'res.users',
+        string='Lead Owner',
+        tracking=True,
+        help='The admin responsible for this contact. Auto-assigned based on student phase.',
+    )
 
     def _get_team_by_student_phase(self):
         """
@@ -97,12 +60,11 @@ class ResPartner(models.Model):
         self.ensure_one()
 
         # Skip if already has a lead owner
-        existing_owner = self._get_lead_owner_id()
-        if existing_owner:
+        if self.lead_owner_id:
             _logger.debug(
-                f"[Lead Owner] Partner {self.name} already has lead owner: {existing_owner.name}"
+                f"[Lead Owner] Partner {self.name} already has lead owner: {self.lead_owner_id.name}"
             )
-            return existing_owner
+            return self.lead_owner_id
 
         # Get team based on student phase
         team = self._get_team_by_student_phase()
@@ -125,7 +87,7 @@ class ResPartner(models.Model):
 
         if assigned_user_id:
             assigned_user = self.env['res.users'].browse(assigned_user_id)
-            self._set_lead_owner_id(assigned_user)
+            self.lead_owner_id = assigned_user
             _logger.info(
                 f"[Lead Owner] Assigned {assigned_user.name} as lead owner for {self.name} "
                 f"(team: {team.name}, student_phase: {self.metabase_student_phase})"
@@ -146,9 +108,8 @@ class ResPartner(models.Model):
         """
         self.ensure_one()
 
-        existing_owner = self._get_lead_owner_id()
-        if existing_owner:
-            return existing_owner
+        if self.lead_owner_id:
+            return self.lead_owner_id
 
         return self._assign_lead_owner()
 

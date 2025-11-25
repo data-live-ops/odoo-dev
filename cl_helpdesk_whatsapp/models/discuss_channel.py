@@ -4,17 +4,6 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def _check_lead_owner_column_exists(cr):
-    """Check if lead_owner_id column exists in res_partner table."""
-    cr.execute("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'res_partner'
-        AND column_name = 'lead_owner_id'
-    """)
-    return cr.fetchone() is not None
-
-
 class DiscussChannel(models.Model):
     """Extend Discuss Channel to auto-add members for WhatsApp channels"""
     _inherit = 'discuss.channel'
@@ -175,15 +164,14 @@ class DiscussChannel(models.Model):
                     continue
 
                 # Check if already has lead owner as member
-                existing_lead_owner = customer_partner._get_lead_owner_id()
-                if existing_lead_owner:
-                    lead_owner_partner = existing_lead_owner.partner_id
+                if customer_partner.lead_owner_id:
+                    lead_owner_partner = customer_partner.lead_owner_id.partner_id
                     existing_members = channel.channel_member_ids.mapped('partner_id')
 
                     if lead_owner_partner in existing_members:
                         _logger.debug(
                             f"[WhatsApp Channel Cron] Channel {channel.id}: "
-                            f"Lead Owner {existing_lead_owner.name} already member"
+                            f"Lead Owner {customer_partner.lead_owner_id.name} already member"
                         )
                         continue
 
