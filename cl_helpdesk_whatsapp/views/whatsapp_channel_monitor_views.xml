@@ -106,7 +106,7 @@
         id="menu_whatsapp_channel_monitor"
         name="WhatsApp Monitor"
         action="action_whatsapp_channel_monitor"
-        parent="helpdesk.helpdesk_menu_report"
+        parent="helpdesk.helpdesk_menu_team"
         sequence="50"/>
 
 </odoo>
