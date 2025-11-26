@@ -101,12 +101,12 @@
         </field>
     </record>
 
-    <!-- Menu Item under Helpdesk -->
+    <!-- Menu Item under Helpdesk Root -->
     <menuitem
         id="menu_whatsapp_channel_monitor"
         name="WhatsApp Monitor"
         action="action_whatsapp_channel_monitor"
-        parent="helpdesk.helpdesk_menu_team"
+        parent="helpdesk.menu_helpdesk_root"
         sequence="50"/>
 
 </odoo>
