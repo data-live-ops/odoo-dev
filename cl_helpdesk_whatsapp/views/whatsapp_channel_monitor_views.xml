@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Tree View for WhatsApp Channel Monitor -->
-    <record id="view_whatsapp_channel_monitor_tree" model="ir.ui.view">
-        <field name="name">whatsapp.channel.monitor.tree</field>
+    <!-- List View for WhatsApp Channel Monitor -->
+    <record id="view_whatsapp_channel_monitor_list" model="ir.ui.view">
+        <field name="name">whatsapp.channel.monitor.list</field>
         <field name="model">whatsapp.channel.monitor</field>
         <field name="arch" type="xml">
-            <tree string="WhatsApp Channel Monitor" create="false" edit="false" delete="false">
+            <list string="WhatsApp Channel Monitor" create="false" edit="false" delete="false">
                 <field name="channel_name"/>
                 <field name="customer_id"/>
                 <field name="customer_phone"/>
@@ -17,7 +17,7 @@
                        decoration-success="admin_count == 1"/>
                 <field name="last_message_date"/>
                 <field name="create_date"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -82,7 +82,7 @@
     <record id="action_whatsapp_channel_monitor" model="ir.actions.act_window">
         <field name="name">WhatsApp Channel Monitor</field>
         <field name="res_model">whatsapp.channel.monitor</field>
-        <field name="view_mode">tree,pivot,graph</field>
+        <field name="view_mode">list,pivot,graph</field>
         <field name="search_view_id" ref="view_whatsapp_channel_monitor_search"/>
         <field name="context">{'search_default_one_admin': 0}</field>
         <field name="help" type="html">
