@@ -20,7 +20,8 @@
         'views/whatsapp_template_views.xml',
         'views/whatsapp_message_views.xml',
         'views/helpdesk_stage_views.xml',
-        'views/res_partner_views.xml',
+        # NOTE: res_partner_views.xml disabled until lead_owner_id column is created
+        # 'views/res_partner_views.xml',
     ],
     'assets': {
         'web.assets_backend': [
@@ -32,5 +33,4 @@
     'auto_install': False,
     'license': 'AGPL-3',
     'support': 'modules@portcities.net',
-    'pre_init_hook': 'pre_init_hook',
 }

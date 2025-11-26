@@ -163,17 +163,8 @@ class DiscussChannel(models.Model):
                     )
                     continue
 
-                # Check if already has lead owner as member
-                if customer_partner.lead_owner_id:
-                    lead_owner_partner = customer_partner.lead_owner_id.partner_id
-                    existing_members = channel.channel_member_ids.mapped('partner_id')
-
-                    if lead_owner_partner in existing_members:
-                        _logger.debug(
-                            f"[WhatsApp Channel Cron] Channel {channel.id}: "
-                            f"Lead Owner {customer_partner.lead_owner_id.name} already member"
-                        )
-                        continue
+                # Skip check for existing lead owner since field doesn't exist yet
+                # Just proceed to add lead owner as member
 
                 # Add Lead Owner as member
                 lead_owner = channel._add_lead_owner_as_member(partner=customer_partner)

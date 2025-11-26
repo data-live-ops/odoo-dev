@@ -8,30 +8,8 @@ _logger = logging.getLogger(__name__)
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    lead_owner_id = fields.Many2one(
-        'res.users',
-        string='Lead Owner',
-        tracking=True,
-        help='The admin responsible for this contact. Auto-assigned based on student phase.',
-    )
-
-    @api.model
-    def _auto_init(self):
-        """Create lead_owner_id column before ORM tries to use it."""
-        cr = self.env.cr
-        cr.execute("""
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'res_partner'
-            AND column_name = 'lead_owner_id'
-        """)
-        if not cr.fetchone():
-            _logger.info("[Lead Owner] Creating lead_owner_id column in res_partner table")
-            cr.execute("""
-                ALTER TABLE res_partner
-                ADD COLUMN lead_owner_id INTEGER
-            """)
-        return super()._auto_init()
+    # NOTE: lead_owner_id field will be added after column is created in database
+    # For now, we use helper methods to safely access the column if it exists
 
     def _get_team_by_student_phase(self):
         """
@@ -77,13 +55,6 @@ class ResPartner(models.Model):
         """
         self.ensure_one()
 
-        # Skip if already has a lead owner
-        if self.lead_owner_id:
-            _logger.debug(
-                f"[Lead Owner] Partner {self.name} already has lead owner: {self.lead_owner_id.name}"
-            )
-            return self.lead_owner_id
-
         # Get team based on student phase
         team = self._get_team_by_student_phase()
 
@@ -105,7 +76,6 @@ class ResPartner(models.Model):
 
         if assigned_user_id:
             assigned_user = self.env['res.users'].browse(assigned_user_id)
-            self.lead_owner_id = assigned_user
             _logger.info(
                 f"[Lead Owner] Assigned {assigned_user.name} as lead owner for {self.name} "
                 f"(team: {team.name}, student_phase: {self.metabase_student_phase})"
@@ -120,15 +90,12 @@ class ResPartner(models.Model):
     def _get_or_assign_lead_owner(self):
         """
         Get existing Lead Owner or assign a new one.
+        Note: Currently always assigns new (no persistence without lead_owner_id field)
 
         Returns:
             res.users record or False
         """
         self.ensure_one()
-
-        if self.lead_owner_id:
-            return self.lead_owner_id
-
         return self._assign_lead_owner()
 
     @api.onchange('phone', 'country_id', 'company_id')
