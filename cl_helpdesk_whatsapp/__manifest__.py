@@ -1,6 +1,6 @@
 {
     'name': 'CoLearn Helpdesk - Ticket Auto Creation from WhatsApp',
-    'version': '18.0.1.0.2',
+    'version': '18.0.1.0.3',
     'summary': 'Module for ticket auto creation from WhatsApp',
     'description': """
         Add helpdesk customizations for ticket auto creation from WhatsApp
@@ -14,12 +14,14 @@
         'cl_contact_base',
     ],
     'data': [
+        'security/ir.model.access.csv',
         'data/ir_cron_whatsapp_channel_members.xml',
         'views/helpdesk_team_views.xml',
         'views/helpdesk_ticket_views.xml',
         'views/whatsapp_template_views.xml',
         'views/whatsapp_message_views.xml',
         'views/helpdesk_stage_views.xml',
+        'views/whatsapp_channel_monitor_views.xml',
         # NOTE: res_partner_views.xml disabled until lead_owner_id column is created
         # 'views/res_partner_views.xml',
     ],

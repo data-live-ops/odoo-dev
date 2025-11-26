@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View for WhatsApp Channel Monitor -->
+    <record id="view_whatsapp_channel_monitor_tree" model="ir.ui.view">
+        <field name="name">whatsapp.channel.monitor.tree</field>
+        <field name="model">whatsapp.channel.monitor</field>
+        <field name="arch" type="xml">
+            <tree string="WhatsApp Channel Monitor" create="false" edit="false" delete="false">
+                <field name="channel_name"/>
+                <field name="customer_id"/>
+                <field name="customer_phone"/>
+                <field name="student_phase"/>
+                <field name="admin_id" string="Assigned Admin"/>
+                <field name="admin_count" string="# Admins"
+                       decoration-danger="admin_count &gt; 1"
+                       decoration-warning="admin_count == 0"
+                       decoration-success="admin_count == 1"/>
+                <field name="last_message_date"/>
+                <field name="create_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Search View for WhatsApp Channel Monitor -->
+    <record id="view_whatsapp_channel_monitor_search" model="ir.ui.view">
+        <field name="name">whatsapp.channel.monitor.search</field>
+        <field name="model">whatsapp.channel.monitor</field>
+        <field name="arch" type="xml">
+            <search string="Search WhatsApp Channels">
+                <field name="channel_name"/>
+                <field name="customer_id"/>
+                <field name="customer_phone"/>
+                <field name="admin_id"/>
+                <separator/>
+                <filter string="1 Admin (OK)" name="one_admin" domain="[('admin_count', '=', 1)]"/>
+                <filter string="Multiple Admins (Issue)" name="multiple_admins" domain="[('admin_count', '&gt;', 1)]"/>
+                <filter string="No Admin" name="no_admin" domain="[('admin_count', '=', 0)]"/>
+                <separator/>
+                <filter string="Non-Paid Students" name="non_paid" domain="[('student_phase', '=', 'non_paid')]"/>
+                <filter string="New Students" name="new_student" domain="[('student_phase', '=', 'new')]"/>
+                <filter string="Paid Students" name="paid" domain="[('student_phase', '=', 'paid')]"/>
+                <separator/>
+                <filter string="Today" name="today" domain="[('create_date', '&gt;=', (context_today()).strftime('%%Y-%%m-%%d'))]"/>
+                <filter string="This Week" name="this_week" domain="[('create_date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%%Y-%%m-%%d'))]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Assigned Admin" name="group_admin" context="{'group_by': 'admin_id'}"/>
+                    <filter string="Student Phase" name="group_phase" context="{'group_by': 'student_phase'}"/>
+                    <filter string="Customer" name="group_customer" context="{'group_by': 'customer_id'}"/>
+                    <filter string="Admin Count" name="group_admin_count" context="{'group_by': 'admin_count'}"/>
+                    <filter string="Created Date" name="group_create_date" context="{'group_by': 'create_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Pivot View for WhatsApp Channel Monitor -->
+    <record id="view_whatsapp_channel_monitor_pivot" model="ir.ui.view">
+        <field name="name">whatsapp.channel.monitor.pivot</field>
+        <field name="model">whatsapp.channel.monitor</field>
+        <field name="arch" type="xml">
+            <pivot string="WhatsApp Channel Analysis">
+                <field name="admin_id" type="row"/>
+                <field name="student_phase" type="col"/>
+                <field name="channel_id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Graph View for WhatsApp Channel Monitor -->
+    <record id="view_whatsapp_channel_monitor_graph" model="ir.ui.view">
+        <field name="name">whatsapp.channel.monitor.graph</field>
+        <field name="model">whatsapp.channel.monitor</field>
+        <field name="arch" type="xml">
+            <graph string="WhatsApp Channel Analysis" type="bar">
+                <field name="admin_id"/>
+                <field name="channel_id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Action for WhatsApp Channel Monitor -->
+    <record id="action_whatsapp_channel_monitor" model="ir.actions.act_window">
+        <field name="name">WhatsApp Channel Monitor</field>
+        <field name="res_model">whatsapp.channel.monitor</field>
+        <field name="view_mode">tree,pivot,graph</field>
+        <field name="search_view_id" ref="view_whatsapp_channel_monitor_search"/>
+        <field name="context">{'search_default_one_admin': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No WhatsApp channels found
+            </p>
+            <p>
+                This view shows all WhatsApp channels with their assigned admins.
+                <br/>
+                <b>Green (1 Admin)</b> = Correct assignment
+                <br/>
+                <b>Red (Multiple Admins)</b> = Too many admins assigned (needs cleanup)
+                <br/>
+                <b>Orange (0 Admin)</b> = No admin assigned yet
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item under Helpdesk -->
+    <menuitem
+        id="menu_whatsapp_channel_monitor"
+        name="WhatsApp Monitor"
+        action="action_whatsapp_channel_monitor"
+        parent="helpdesk.helpdesk_menu_report"
+        sequence="50"/>
+
+</odoo>
