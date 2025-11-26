@@ -5,6 +5,23 @@
         <field name="inherit_id" ref="helpdesk.helpdesk_team_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//div[@id='productivity']/div[hasclass('col-lg-6')][last()]" position="after">
+                <!-- WhatsApp Team Configuration -->
+                <div class="col-lg-6">
+                    <div class="o_setting_box">
+                        <div class="o_setting_left_pane">
+                            <field name="is_whatsapp_team"/>
+                        </div>
+                        <div class="o_setting_right_pane">
+                            <label for="is_whatsapp_team"/>
+                            <div class="text-muted">
+                                Use this team for WhatsApp channel admin assignment.
+                                Only ONE team should have this checked.
+                                Team members will be assigned using round-robin.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Student Phase Configuration -->
                 <div class="col-lg-6">
                     <div class="o_setting_box">
                         <div>

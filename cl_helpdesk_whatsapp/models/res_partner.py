@@ -11,9 +11,29 @@ class ResPartner(models.Model):
     # NOTE: lead_owner_id field will be added after column is created in database
     # For now, we use helper methods to safely access the column if it exists
 
+    def _get_whatsapp_team(self):
+        """
+        Get the WhatsApp team for channel assignment.
+        This is the PRIMARY method for WhatsApp channel admin assignment.
+
+        Returns:
+            helpdesk.team record or False
+        """
+        team = self.env['helpdesk.team'].search([
+            ('is_whatsapp_team', '=', True)
+        ], limit=1)
+
+        if team:
+            _logger.info(f"[Lead Owner] Found WhatsApp team: '{team.name}'")
+        else:
+            _logger.warning("[Lead Owner] No WhatsApp team configured (is_whatsapp_team=True)")
+
+        return team
+
     def _get_team_by_student_phase(self):
         """
         Get the helpdesk team based on student phase configuration.
+        FALLBACK method - only used if no WhatsApp team is configured.
 
         Returns:
             helpdesk.team record or False
@@ -47,26 +67,38 @@ class ResPartner(models.Model):
 
     def _assign_lead_owner(self):
         """
-        Assign a Lead Owner to this partner based on student phase.
-        Uses round-robin assignment from the appropriate helpdesk team members.
+        Assign a Lead Owner to this partner.
+
+        Priority:
+        1. WhatsApp Team (is_whatsapp_team=True) - RECOMMENDED
+        2. Student Phase Team (fallback)
+
+        Uses round-robin assignment from the team members.
 
         Returns:
             res.users record or False
         """
         self.ensure_one()
 
-        # Get team based on student phase
-        team = self._get_team_by_student_phase()
+        # Priority 1: Get WhatsApp team
+        team = self._get_whatsapp_team()
+
+        # Priority 2: Fallback to student phase team
+        if not team:
+            _logger.info("[Lead Owner] No WhatsApp team, falling back to student phase team")
+            team = self._get_team_by_student_phase()
 
         if not team:
             _logger.warning(
-                f"[Lead Owner] Cannot assign lead owner for {self.name}: no team found"
+                f"[Lead Owner] Cannot assign lead owner for {self.name}: no team found. "
+                "Please configure a WhatsApp team (Helpdesk > Configuration > Teams > check 'WhatsApp Team')"
             )
             return False
 
         if not team.member_ids:
             _logger.warning(
-                f"[Lead Owner] Team '{team.name}' has no members"
+                f"[Lead Owner] Team '{team.name}' has no members. "
+                "Please add team members to enable WhatsApp assignment."
             )
             return False
 
@@ -78,12 +110,13 @@ class ResPartner(models.Model):
             assigned_user = self.env['res.users'].browse(assigned_user_id)
             _logger.info(
                 f"[Lead Owner] Assigned {assigned_user.name} as lead owner for {self.name} "
-                f"(team: {team.name}, student_phase: {self.metabase_student_phase})"
+                f"(team: {team.name})"
             )
             return assigned_user
         else:
             _logger.warning(
-                f"[Lead Owner] Team '{team.name}' could not determine user to assign"
+                f"[Lead Owner] Team '{team.name}' could not determine user to assign. "
+                "Check team assignment settings."
             )
             return False
 
