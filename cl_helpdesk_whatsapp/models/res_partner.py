@@ -107,56 +107,47 @@ class ResPartner(models.Model):
             )
             return False
 
-        # Try Odoo's built-in assignment method first
-        try:
-            user_dict = team._determine_user_to_assign()
-            assigned_user_id = user_dict.get(team.id)
+        # IMPORTANT: Always use our custom round-robin from team members
+        # Do NOT use Odoo's _determine_user_to_assign() because it may assign
+        # users who are online but not team members
+        _logger.info(
+            f"[Lead Owner] Using team '{team.name}' with {len(team.member_ids)} members: "
+            f"{', '.join(team.member_ids.mapped('name'))}"
+        )
 
-            if assigned_user_id:
-                assigned_user = self.env['res.users'].browse(assigned_user_id)
-                _logger.info(
-                    f"[Lead Owner] Assigned {assigned_user.name} as lead owner for {self.name} "
-                    f"(team: {team.name}, phase: {self.metabase_student_phase})"
-                )
-                return assigned_user
-        except Exception as e:
-            _logger.warning(
-                f"[Lead Owner] _determine_user_to_assign failed: {e}. Using fallback."
-            )
-
-        # Fallback: Custom round-robin from team members
+        # Custom round-robin from team members ONLY
         # Count WhatsApp channels assigned to each member and pick the one with least
         members = team.member_ids
-        if members:
-            member_channel_counts = []
+        member_channel_counts = []
 
-            for member in members:
-                # Count how many WhatsApp channels this member is assigned to
-                channel_count = self.env['discuss.channel.member'].sudo().search_count([
-                    ('partner_id', '=', member.partner_id.id),
-                    ('channel_id.channel_type', '=', 'whatsapp'),
-                ])
-                member_channel_counts.append((member, channel_count))
-                _logger.debug(
-                    f"[Lead Owner] Member {member.name} has {channel_count} WhatsApp channels"
-                )
-
-            # Sort by channel count (ascending) and pick the one with least channels
-            member_channel_counts.sort(key=lambda x: x[1])
-            assigned_user = member_channel_counts[0][0]
-
-            _logger.info(
-                f"[Lead Owner] Round-robin assigned {assigned_user.name} as lead owner for {self.name} "
-                f"(team: {team.name}, phase: {self.metabase_student_phase}, "
-                f"current channels: {member_channel_counts[0][1]})"
+        for member in members:
+            # Count how many WhatsApp channels this member is assigned to
+            channel_count = self.env['discuss.channel.member'].sudo().search_count([
+                ('partner_id', '=', member.partner_id.id),
+                ('channel_id.channel_type', '=', 'whatsapp'),
+            ])
+            member_channel_counts.append((member, channel_count))
+            _logger.debug(
+                f"[Lead Owner] Member {member.name} has {channel_count} WhatsApp channels"
             )
-            return assigned_user
 
-        _logger.warning(
-            f"[Lead Owner] Team '{team.name}' could not determine user to assign. "
-            "Check team assignment settings."
+        if not member_channel_counts:
+            _logger.warning(
+                f"[Lead Owner] Team '{team.name}' could not determine user to assign. "
+                "Check team assignment settings."
+            )
+            return False
+
+        # Sort by channel count (ascending) and pick the one with least channels
+        member_channel_counts.sort(key=lambda x: x[1])
+        assigned_user = member_channel_counts[0][0]
+
+        _logger.info(
+            f"[Lead Owner] Round-robin assigned {assigned_user.name} as lead owner for {self.name} "
+            f"(team: {team.name}, phase: {self.metabase_student_phase}, "
+            f"current channels: {member_channel_counts[0][1]})"
         )
-        return False
+        return assigned_user
 
     def _get_or_assign_lead_owner(self):
         """
