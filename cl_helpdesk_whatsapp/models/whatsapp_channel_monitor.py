@@ -160,10 +160,14 @@ class WhatsAppChannelMonitor(models.Model):
                 lead_owner = customer._get_or_assign_lead_owner()
 
                 if lead_owner:
+                    # Get partner_id as integer
+                    lead_owner_partner_id = lead_owner.partner_id.id
+                    lead_owner_name = lead_owner.name
+
                     # Add new lead owner as member
-                    channel.sudo().add_members(partner_ids=[lead_owner.partner_id.id])
+                    channel.sudo().add_members(partner_ids=[lead_owner_partner_id])
                     _logger.info(
-                        f"[Reset] Channel {channel.id}: Assigned {lead_owner.name} as new admin"
+                        f"[Reset] Channel {channel.id}: Assigned {lead_owner_name} as new admin"
                     )
                     channels_reset += 1
                 else:

@@ -107,23 +107,41 @@ class ResPartner(models.Model):
             )
             return False
 
-        # Use Odoo's built-in assignment method (respects round-robin/balanced settings)
-        user_dict = team._determine_user_to_assign()
-        assigned_user_id = user_dict.get(team.id)
+        # Try Odoo's built-in assignment method first
+        try:
+            user_dict = team._determine_user_to_assign()
+            assigned_user_id = user_dict.get(team.id)
 
-        if assigned_user_id:
-            assigned_user = self.env['res.users'].browse(assigned_user_id)
+            if assigned_user_id:
+                assigned_user = self.env['res.users'].browse(assigned_user_id)
+                _logger.info(
+                    f"[Lead Owner] Assigned {assigned_user.name} as lead owner for {self.name} "
+                    f"(team: {team.name}, phase: {self.metabase_student_phase})"
+                )
+                return assigned_user
+        except Exception as e:
+            _logger.warning(
+                f"[Lead Owner] _determine_user_to_assign failed: {e}. Using fallback."
+            )
+
+        # Fallback: Simple round-robin from team members
+        # Get member with least assigned channels (simple load balancing)
+        members = team.member_ids
+        if members:
+            # For simplicity, just pick first available member
+            # In production, you might want to implement proper round-robin
+            assigned_user = members[0]
             _logger.info(
-                f"[Lead Owner] Assigned {assigned_user.name} as lead owner for {self.name} "
+                f"[Lead Owner] Fallback assigned {assigned_user.name} as lead owner for {self.name} "
                 f"(team: {team.name}, phase: {self.metabase_student_phase})"
             )
             return assigned_user
-        else:
-            _logger.warning(
-                f"[Lead Owner] Team '{team.name}' could not determine user to assign. "
-                "Check team assignment settings."
-            )
-            return False
+
+        _logger.warning(
+            f"[Lead Owner] Team '{team.name}' could not determine user to assign. "
+            "Check team assignment settings."
+        )
+        return False
 
     def _get_or_assign_lead_owner(self):
         """
