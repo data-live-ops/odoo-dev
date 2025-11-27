@@ -124,16 +124,31 @@ class ResPartner(models.Model):
                 f"[Lead Owner] _determine_user_to_assign failed: {e}. Using fallback."
             )
 
-        # Fallback: Simple round-robin from team members
-        # Get member with least assigned channels (simple load balancing)
+        # Fallback: Custom round-robin from team members
+        # Count WhatsApp channels assigned to each member and pick the one with least
         members = team.member_ids
         if members:
-            # For simplicity, just pick first available member
-            # In production, you might want to implement proper round-robin
-            assigned_user = members[0]
+            member_channel_counts = []
+
+            for member in members:
+                # Count how many WhatsApp channels this member is assigned to
+                channel_count = self.env['discuss.channel.member'].sudo().search_count([
+                    ('partner_id', '=', member.partner_id.id),
+                    ('channel_id.channel_type', '=', 'whatsapp'),
+                ])
+                member_channel_counts.append((member, channel_count))
+                _logger.debug(
+                    f"[Lead Owner] Member {member.name} has {channel_count} WhatsApp channels"
+                )
+
+            # Sort by channel count (ascending) and pick the one with least channels
+            member_channel_counts.sort(key=lambda x: x[1])
+            assigned_user = member_channel_counts[0][0]
+
             _logger.info(
-                f"[Lead Owner] Fallback assigned {assigned_user.name} as lead owner for {self.name} "
-                f"(team: {team.name}, phase: {self.metabase_student_phase})"
+                f"[Lead Owner] Round-robin assigned {assigned_user.name} as lead owner for {self.name} "
+                f"(team: {team.name}, phase: {self.metabase_student_phase}, "
+                f"current channels: {member_channel_counts[0][1]})"
             )
             return assigned_user
 
