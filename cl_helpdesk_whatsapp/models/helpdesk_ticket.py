@@ -75,12 +75,49 @@ class HelpdeskTicket(models.Model):
             )
         return ticket
 
+    def _get_whatsapp_channel_admin(self):
+        """
+        Get the admin assigned to customer's WhatsApp channel.
+        This ensures helpdesk ticket is assigned to the same person handling WhatsApp.
+
+        Returns:
+            res.users record or False
+        """
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        if not self.partner_id:
+            return False
+
+        # Find WhatsApp channel for this customer
+        channel = self.env['discuss.channel'].sudo().search([
+            ('channel_type', '=', 'whatsapp'),
+            ('channel_member_ids.partner_id', '=', self.partner_id.id),
+        ], limit=1, order='create_date desc')
+
+        if not channel:
+            _logger.debug(f"[Helpdesk Assignment] No WhatsApp channel found for partner {self.partner_id.name}")
+            return False
+
+        # Get admin from channel
+        admin = channel._get_existing_admin_from_channel()
+        if admin:
+            _logger.info(
+                f"[Helpdesk Assignment] Found WhatsApp admin {admin.name} "
+                f"for partner {self.partner_id.name}"
+            )
+        return admin
+
     def assign_user_based_on_student_phase(self):
         """ Check student phase and assign agent based on it
 
-        Assignment Rules:
-        - Paid Student → Support team
-        - New Student or Non Paid Student → Onboarding team
+        Assignment Priority:
+        1. Use WhatsApp channel admin if exists (sync with WhatsApp)
+        2. Use team assignment based on student phase (fallback)
+
+        Team Rules:
+        - Paid Student → Support team (or team with paid_student=True)
+        - New Student or Non Paid Student → Onboarding team (or team with new_student/non_paid_student=True)
         """
         import logging
         _logger = logging.getLogger(__name__)
@@ -92,39 +129,75 @@ class HelpdeskTicket(models.Model):
         student_phase = self.partner_id.metabase_student_phase
         _logger.info(f"[Helpdesk Assignment] Ticket {self.id} - Partner: {self.partner_id.name}, Student Phase: {student_phase}")
 
+        # PRIORITY 1: Check if customer has WhatsApp channel with assigned admin
+        whatsapp_admin = self._get_whatsapp_channel_admin()
+        if whatsapp_admin:
+            # Find team that this admin belongs to
+            team = self.env['helpdesk.team'].sudo().search([
+                ('member_ids', 'in', [whatsapp_admin.id]),
+                ('is_whatsapp_team', '=', True),
+            ], limit=1)
+
+            if team:
+                self.team_id = team
+                self.user_id = whatsapp_admin
+                _logger.info(
+                    f"[Helpdesk Assignment] Synced with WhatsApp - Team: {team.name}, "
+                    f"User: {whatsapp_admin.name}"
+                )
+                return
+
+        # PRIORITY 2: Fallback to student phase based assignment
         if not student_phase:
             _logger.warning(f"[Helpdesk Assignment] Partner {self.partner_id.name} has no student phase, skipping assignment")
             return
 
         team_id = False
 
-        # Paid Student → Support team
+        # Find team based on student phase flags (same logic as WhatsApp assignment)
         if student_phase == 'paid':
             team_id = self.env['helpdesk.team'].search([
-                ('name', '=', 'Support')
+                ('is_whatsapp_team', '=', True),
+                ('paid_student', '=', True),
             ], limit=1)
-            _logger.info(f"[Helpdesk Assignment] Paid Student → Looking for 'Support' team")
+            if not team_id:
+                # Fallback to name-based search
+                team_id = self.env['helpdesk.team'].search([
+                    ('name', 'ilike', 'Support')
+                ], limit=1)
+            _logger.info(f"[Helpdesk Assignment] Paid Student → Looking for team with paid_student=True")
 
-        # New Student or Non Paid Student → Onboarding team
         elif student_phase in ['new', 'non_paid']:
-            team_id = self.env['helpdesk.team'].search([
-                ('name', '=', 'Onboarding')
-            ], limit=1)
-            _logger.info(f"[Helpdesk Assignment] New/Non-Paid Student → Looking for 'Onboarding' team")
+            # For new students
+            if student_phase == 'new':
+                team_id = self.env['helpdesk.team'].search([
+                    ('is_whatsapp_team', '=', True),
+                    ('new_student', '=', True),
+                ], limit=1)
+            # For non_paid students
+            if not team_id:
+                team_id = self.env['helpdesk.team'].search([
+                    ('is_whatsapp_team', '=', True),
+                    ('non_paid_student', '=', True),
+                ], limit=1)
+            if not team_id:
+                # Fallback to name-based search
+                team_id = self.env['helpdesk.team'].search([
+                    ('name', 'ilike', 'Onboarding')
+                ], limit=1)
+            _logger.info(f"[Helpdesk Assignment] {student_phase} Student → Looking for matching team")
 
         if team_id:
             _logger.info(f"[Helpdesk Assignment] Found team: {team_id.name} (ID: {team_id.id})")
             self.team_id = team_id
 
-            # Assign user from team
-            user_dict = team_id._determine_user_to_assign()
-            assigned_user_id = user_dict.get(team_id.id)
+            # Use same round-robin logic as WhatsApp assignment
+            assigned_user = self.partner_id._get_or_assign_lead_owner()
 
-            if assigned_user_id:
-                self.user_id = assigned_user_id
-                _logger.info(f"[Helpdesk Assignment] Assigned to user: {self.user_id.name} (ID: {assigned_user_id})")
+            if assigned_user:
+                self.user_id = assigned_user
+                _logger.info(f"[Helpdesk Assignment] Assigned to user: {assigned_user.name}")
             else:
-                _logger.warning(f"[Helpdesk Assignment] Team {team_id.name} returned no user to assign")
+                _logger.warning(f"[Helpdesk Assignment] Could not determine user to assign")
         else:
-            team_name = 'Support' if student_phase == 'paid' else 'Onboarding'
-            _logger.warning(f"[Helpdesk Assignment] Team '{team_name}' not found for student phase '{student_phase}'")
+            _logger.warning(f"[Helpdesk Assignment] No team found for student phase '{student_phase}'")

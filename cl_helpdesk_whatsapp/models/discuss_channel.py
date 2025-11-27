@@ -35,11 +35,35 @@ class DiscussChannel(models.Model):
 
         return False
 
+    def _get_existing_admin_from_channel(self):
+        """
+        Get the existing admin (internal user) from this channel if any.
+
+        Returns:
+            res.users record or False
+        """
+        self.ensure_one()
+
+        for member in self.channel_member_ids:
+            partner = member.partner_id
+            # Check if this partner is an internal user
+            user = self.env['res.users'].sudo().search([
+                ('partner_id', '=', partner.id),
+                ('share', '=', False),  # Internal user
+                ('active', '=', True),
+            ], limit=1)
+
+            if user:
+                return user
+
+        return False
+
     def _add_lead_owner_as_member(self, partner=None):
         """
         Add only the Lead Owner as member to the WhatsApp channel.
         This replaces the old method that added ALL internal users.
 
+        IMPORTANT: If channel already has an admin, DO NOT add another one.
         1 User = 1 Admin (Lead Owner)
 
         Args:
@@ -53,6 +77,15 @@ class DiscussChannel(models.Model):
                 continue
 
             try:
+                # IMPORTANT: Check if channel already has an admin
+                existing_admin = channel._get_existing_admin_from_channel()
+                if existing_admin:
+                    _logger.debug(
+                        f"[WhatsApp Channel] Channel {channel.id} already has admin "
+                        f"{existing_admin.name}, skipping new assignment"
+                    )
+                    return existing_admin
+
                 # Get customer partner from channel if not provided
                 customer_partner = partner or channel._get_customer_partner_from_channel()
 
