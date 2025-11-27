@@ -6,6 +6,11 @@
         <field name="model">whatsapp.channel.monitor</field>
         <field name="arch" type="xml">
             <list string="WhatsApp Channel Monitor" create="false" edit="false" delete="false">
+                <header>
+                    <button name="action_reset_and_reassign" type="object"
+                            string="Reset &amp; Reassign Selected"
+                            confirm="This will remove ALL admins from selected channels and reassign 1 admin based on student phase. Continue?"/>
+                </header>
                 <field name="channel_name"/>
                 <field name="customer_id"/>
                 <field name="customer_phone"/>
@@ -98,6 +103,18 @@
                 <br/>
                 <b>Orange (0 Admin)</b> = No admin assigned yet
             </p>
+        </field>
+    </record>
+
+    <!-- Server Action: Reset All Channels -->
+    <record id="action_reset_all_whatsapp_channels" model="ir.actions.server">
+        <field name="name">Reset All WhatsApp Channels</field>
+        <field name="model_id" ref="model_whatsapp_channel_monitor"/>
+        <field name="binding_model_id" ref="model_whatsapp_channel_monitor"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = env['whatsapp.channel.monitor'].action_reset_all_channels()
         </field>
     </record>
 

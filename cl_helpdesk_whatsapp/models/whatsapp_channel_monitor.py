@@ -1,4 +1,7 @@
 from odoo import api, fields, models, tools
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class WhatsAppChannelMonitor(models.Model):
@@ -121,3 +124,76 @@ class WhatsAppChannelMonitor(models.Model):
             'view_mode': 'form',
             'target': 'current',
         }
+
+    def action_reset_and_reassign(self):
+        """
+        Reset channel members: remove all admins and reassign only 1 admin.
+        Can be called on single or multiple records.
+        """
+        channels_reset = 0
+        channels_failed = 0
+
+        for record in self:
+            try:
+                channel = record.channel_id
+                customer = record.customer_id
+
+                if not channel or not customer:
+                    _logger.warning(f"[Reset] Skipping record {record.id}: missing channel or customer")
+                    channels_failed += 1
+                    continue
+
+                # Get all admin members (internal users) in this channel
+                admin_members = channel.sudo().channel_member_ids.filtered(
+                    lambda m: m.partner_id.user_ids and
+                              any(u.active and not u.share for u in m.partner_id.user_ids)
+                )
+
+                if admin_members:
+                    _logger.info(
+                        f"[Reset] Channel {channel.id}: Removing {len(admin_members)} admin(s)"
+                    )
+                    # Remove admin members
+                    admin_members.sudo().unlink()
+
+                # Reassign new lead owner
+                lead_owner = customer._get_or_assign_lead_owner()
+
+                if lead_owner:
+                    # Add new lead owner as member
+                    channel.sudo().add_members(partner_ids=[lead_owner.partner_id.id])
+                    _logger.info(
+                        f"[Reset] Channel {channel.id}: Assigned {lead_owner.name} as new admin"
+                    )
+                    channels_reset += 1
+                else:
+                    _logger.warning(
+                        f"[Reset] Channel {channel.id}: Could not assign new lead owner"
+                    )
+                    channels_failed += 1
+
+            except Exception as e:
+                _logger.error(f"[Reset] Error processing channel {record.id}: {e}")
+                channels_failed += 1
+
+        # Return notification
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Reset Complete',
+                'message': f'Reset {channels_reset} channel(s). Failed: {channels_failed}',
+                'type': 'success' if channels_failed == 0 else 'warning',
+                'sticky': False,
+            }
+        }
+
+    def action_reset_all_channels(self):
+        """
+        Reset ALL WhatsApp channels - remove all admins and reassign based on new logic.
+        This is a bulk operation for cleaning up existing channels.
+        """
+        # Get all monitor records
+        all_records = self.search([])
+        _logger.info(f"[Reset All] Starting reset for {len(all_records)} channels")
+        return all_records.action_reset_and_reassign()
