@@ -1,6 +1,6 @@
 {
     'name': 'CoLearn Helpdesk - Ticket Auto Creation from WhatsApp',
-    'version': '18.0.1.0.4',
+    'version': '18.0.1.0.5',
     'summary': 'Module for ticket auto creation from WhatsApp',
     'description': """
         Add helpdesk customizations for ticket auto creation from WhatsApp
