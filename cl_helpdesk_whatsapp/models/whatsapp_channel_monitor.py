@@ -201,3 +201,88 @@ class WhatsAppChannelMonitor(models.Model):
         all_records = self.search([])
         _logger.info(f"[Reset All] Starting reset for {len(all_records)} channels")
         return all_records.action_reset_and_reassign()
+
+    def action_delete_channel(self):
+        """
+        Delete selected WhatsApp channel(s).
+        This permanently removes the channel from discuss.channel.
+        """
+        channels_deleted = 0
+        channels_failed = 0
+
+        for record in self:
+            try:
+                channel = record.channel_id
+                channel_name = record.channel_name
+                channel_id = channel.id
+
+                if not channel:
+                    _logger.warning(f"[Delete] Skipping record {record.id}: missing channel")
+                    channels_failed += 1
+                    continue
+
+                # Delete the channel
+                channel.sudo().unlink()
+                _logger.info(f"[Delete] Deleted channel {channel_id} ({channel_name})")
+                channels_deleted += 1
+
+            except Exception as e:
+                _logger.error(f"[Delete] Error deleting channel {record.id}: {e}")
+                channels_failed += 1
+
+        # Return notification
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Delete Complete',
+                'message': f'Deleted {channels_deleted} channel(s). Failed: {channels_failed}',
+                'type': 'success' if channels_failed == 0 else 'warning',
+                'sticky': False,
+            }
+        }
+
+    def action_delete_duplicates_keep_newest(self):
+        """
+        Delete duplicate channels for same customer, keeping only the NEWEST one.
+        Useful for cleaning up duplicate channels created for same phone number.
+        """
+        # Group records by customer phone
+        customer_channels = {}
+        for record in self:
+            phone = record.customer_phone
+            if phone:
+                if phone not in customer_channels:
+                    customer_channels[phone] = []
+                customer_channels[phone].append(record)
+
+        channels_to_delete = self.env['whatsapp.channel.monitor']
+        duplicates_found = 0
+
+        for phone, records in customer_channels.items():
+            if len(records) > 1:
+                # Sort by create_date descending (newest first)
+                sorted_records = sorted(records, key=lambda r: r.create_date or '', reverse=True)
+                # Keep first (newest), mark rest for deletion
+                for record in sorted_records[1:]:
+                    channels_to_delete |= record
+                    duplicates_found += 1
+                _logger.info(
+                    f"[Delete Duplicates] Phone {phone}: keeping {sorted_records[0].channel_name}, "
+                    f"deleting {len(sorted_records) - 1} duplicate(s)"
+                )
+
+        if not channels_to_delete:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'No Duplicates Found',
+                    'message': 'No duplicate channels found for the selected records.',
+                    'type': 'info',
+                    'sticky': False,
+                }
+            }
+
+        # Delete the duplicates
+        return channels_to_delete.action_delete_channel()

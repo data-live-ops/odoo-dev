@@ -8,8 +8,16 @@
             <list string="WhatsApp Channel Monitor" create="false" edit="false" delete="false">
                 <header>
                     <button name="action_reset_and_reassign" type="object"
-                            string="Reset &amp; Reassign Selected"
+                            string="Reset &amp; Reassign"
                             confirm="This will remove ALL admins from selected channels and reassign 1 admin based on student phase. Continue?"/>
+                    <button name="action_delete_channel" type="object"
+                            string="Delete Channel"
+                            class="btn-danger"
+                            confirm="WARNING: This will PERMANENTLY delete the selected WhatsApp channel(s). This cannot be undone! Continue?"/>
+                    <button name="action_delete_duplicates_keep_newest" type="object"
+                            string="Delete Duplicates (Keep Newest)"
+                            class="btn-warning"
+                            confirm="This will delete duplicate channels for same phone number, keeping only the NEWEST one. Continue?"/>
                 </header>
                 <field name="channel_name"/>
                 <field name="customer_id"/>
