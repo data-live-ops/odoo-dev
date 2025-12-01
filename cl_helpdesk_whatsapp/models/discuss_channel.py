@@ -1,4 +1,5 @@
-from odoo import models, api
+from odoo import models, api, Command, tools, _
+from markupsafe import Markup
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -222,3 +223,117 @@ class DiscussChannel(models.Model):
             f"Updated {channels_updated} channels, "
             f"assigned {lead_owners_assigned} Lead Owners"
         )
+
+    @api.returns('self')
+    def _get_whatsapp_channel(self, whatsapp_number, wa_account_id, sender_name=False, create_if_not_found=False, related_message=False):
+        """
+        OVERRIDE: Replace notify_user_ids with WhatsApp Team member assignment.
+
+        Instead of using wa_account_id.notify_user_ids (Default Users in WhatsApp Account),
+        we use our custom WhatsApp Team assignment based on student phase.
+        """
+        from odoo.addons.whatsapp.tools import phone_validation as wa_phone_validation
+
+        # Normalize phone number (same as original)
+        base_number = whatsapp_number if whatsapp_number.startswith('+') else f'+{whatsapp_number}'
+        wa_number = base_number.lstrip('+')
+        wa_formatted = wa_phone_validation.wa_phone_format(
+            self.env.company,
+            number=base_number,
+            force_format="WHATSAPP",
+            raise_exception=False,
+        ) or wa_number
+
+        related_record = False
+        responsible_partners = self.env['res.partner']
+        channel_domain = [
+            ('whatsapp_number', '=', wa_formatted),
+            ('wa_account_id', '=', wa_account_id.id)
+        ]
+        if related_message:
+            related_record = self.env[related_message.model].browse(related_message.res_id)
+            responsible_partners = related_record._whatsapp_get_responsible(
+                related_message=related_message,
+                related_record=related_record,
+                whatsapp_account=wa_account_id,
+            ).partner_id
+
+        channel = self.sudo().search(channel_domain, order='create_date desc', limit=1)
+        if responsible_partners:
+            channel = channel.filtered(lambda c: all(r in c.channel_member_ids.partner_id for r in responsible_partners))
+
+        partners_to_notify = responsible_partners
+        record_name = related_message.record_name if related_message else False
+        if related_message and not record_name and related_message.res_id:
+            record_name = self.env[related_message.model].browse(related_message.res_id).display_name
+
+        if not channel and create_if_not_found:
+            # Find or create partner for this WhatsApp number
+            whatsapp_partner = self.env['res.partner']._find_or_create_from_number(wa_formatted, sender_name)
+
+            channel = self.sudo().with_context(tools.clean_context(self.env.context)).create({
+                'name': f"{wa_formatted} ({record_name})" if record_name else wa_formatted,
+                'channel_type': 'whatsapp',
+                'whatsapp_number': wa_formatted,
+                'whatsapp_partner_id': whatsapp_partner.id,
+                'wa_account_id': wa_account_id.id,
+            })
+            partners_to_notify |= whatsapp_partner
+
+            if related_message:
+                # Add message in channel about the related document
+                info = _("Related %(model_name)s: ", model_name=self.env['ir.model']._get(related_message.model).display_name)
+                url = Markup('{base_url}/odoo/{model}/{res_id}').format(
+                    base_url=self.get_base_url(), model=related_message.model, res_id=related_message.res_id)
+                related_record_name = related_message.record_name
+                if not related_record_name:
+                    related_record_name = self.env[related_message.model].browse(related_message.res_id).display_name
+                channel.message_post(
+                    body=Markup('<p>{info}<a target="_blank" href="{url}">{related_record_name}</a></p>').format(
+                        info=info, url=url, related_record_name=related_record_name),
+                    message_type='comment',
+                    author_id=self.env.ref('base.partner_root').id,
+                    subtype_xmlid='mail.mt_note',
+                )
+                if hasattr(related_record, 'message_post'):
+                    # Add notification in document about the new message and related channel
+                    info = _("A new WhatsApp channel is created for this document")
+                    url = Markup('{base_url}/odoo/discuss.channel/{channel_id}').format(
+                        base_url=self.get_base_url(), channel_id=channel.id)
+                    related_record.message_post(
+                        author_id=self.env.ref('base.partner_root').id,
+                        body=Markup('<p>{info} <a target="_blank" class="o_whatsapp_channel_redirect"'
+                                    'data-oe-id="{channel_id}" href="{url}">{channel_name}</a></p>').format(
+                                        info=info, url=url, channel_id=channel.id, channel_name=channel.display_name),
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_note',
+                    )
+
+            # ============================================================
+            # CUSTOM: Use WhatsApp Team assignment instead of notify_user_ids
+            # ============================================================
+            # Get Lead Owner from WhatsApp Team based on student phase
+            lead_owner = whatsapp_partner._get_or_assign_lead_owner()
+
+            if lead_owner:
+                # Add Lead Owner's partner to notification list
+                partners_to_notify |= lead_owner.partner_id
+                _logger.info(
+                    f"[WhatsApp Channel] New channel {channel.id}: "
+                    f"Assigned Lead Owner {lead_owner.name} from WhatsApp Team "
+                    f"(student phase: {whatsapp_partner.metabase_student_phase or 'not set'})"
+                )
+            else:
+                # Fallback to notify_user_ids only if no WhatsApp Team configured
+                _logger.warning(
+                    f"[WhatsApp Channel] New channel {channel.id}: "
+                    f"No WhatsApp Team found, falling back to notify_user_ids"
+                )
+                if partners_to_notify == channel.whatsapp_partner_id and wa_account_id.notify_user_ids.partner_id:
+                    partners_to_notify |= wa_account_id.notify_user_ids.partner_id
+
+            # Set channel members
+            channel.channel_member_ids = [Command.clear()] + [Command.create({'partner_id': partner.id}) for partner in partners_to_notify]
+            channel._broadcast(partners_to_notify.ids)
+
+        return channel
